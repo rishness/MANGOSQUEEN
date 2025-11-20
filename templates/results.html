@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block title %}
+MANGOSQUEEN - Results
+{% endblock %}
+
+{% block content %}
+<div class="results-page-container">
+  <div class="results-container">
+    <h1 class="results-title">Mangosteen Disease Detection Results</h1>
+
+    <div class="result-content">
+      <div class="image-section">
+        <h2 class="section-title">Image Preview</h2>
+        <div class="result-image-container">
+          <img src="{{ url_for('static', filename=image_path) }}" alt="Mangosteen Image">
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h2 class="section-title">Predicted Results</h2>
+
+        <div class="info-item disease-type">
+          <div class="info-label">Disease Type:</div>
+          <div class="info-value highlight">{{ disease_name }}</div>
+          <div class="divider"></div>
+        </div>
+
+        <div class="info-item confidence">
+          <div class="info-label">Confidence Score:</div>
+          <div class="info-value highlight">{{ "%.2f"|format(confidence_score) }}%</div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" style="width: {{ confidence_score }}%;"></div>
+          </div>
+          <div class="divider"></div>
+        </div>
+
+        <div class="info-item prevention">
+          <div class="info-label">Symptoms:</div>
+          <div class="info-value">
+            <ul class="prevention-list">
+              {% if disease_name == 'Anthracnose' %}
+                <li>Dark, sunken spots on fruit</li>
+                <li>Fruit rot and cracking</li>
+                <li>Leaf spots in severe cases</li>
+                <li>Premature fruit drop</li>
+                <li>Twig dieback in advanced stages</li>
+              {% elif disease_name == 'Dry Rot' %}
+                <li>Dry, sunken, wrinkled fruit skin</li>
+                <li>Discoloration and lightness in weight</li>
+                <li>No fluid or wet rot, only tissue breakdown</li>
+                <li>Musty odor in advanced cases</li>
+                <li>Powdery fungal growth sometimes visible</li>
+              {% elif disease_name == 'Gummosis' %}
+                <li>Sticky resin or gum oozing from bark</li>
+                <li>Darkened or cracked bark</li>
+                <li>Wilting or yellowing of nearby leaves</li>
+                <li>Reduced fruit production</li>
+                <li>Branch dieback in severe cases</li>
+              {% elif disease_name == 'Half ripe' %}
+                <li>Firm texture with slight give</li>
+                <li>Partial color change from green</li>
+                <li>Mild aroma development</li>
+                <li>Somewhat tart flavor</li>
+                <li>Thick rind that's beginning to soften</li>
+              {% elif disease_name == 'Healthy ripe' %}
+                <li>Deep purple, uniform color</li>
+                <li>Slight softness when gently pressed</li>
+                <li>Sweet, fragrant aroma</li>
+                <li>Glossy, unblemished skin</li>
+                <li>Heavy for its size</li>
+              {% elif disease_name == 'Over ripe' %}
+                <li>Very soft, squishy skin</li>
+                <li>Possible internal browning</li>
+                <li>Loss of flavor or sweetness</li>
+                <li>Fermented odor</li>
+                <li>Juice leakage</li>
+              {% elif disease_name == 'Raw' %}
+                <li>Hard, firm texture</li>
+                <li>Greenish color</li>
+                <li>No noticeable aroma</li>
+                <li>Very tart flavor</li>
+                <li>Thick, tough rind</li>
+              {% else %}
+                <li>Unable to determine specific symptoms</li>
+                <li>May require expert examination</li>
+                <li>Could be multiple conditions present</li>
+                <li>Possible environmental damage</li>
+                <li>Need clearer image for proper diagnosis</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="additional-info">
+      <h2 class="additional-info-title">Additional Information</h2>
+      <div class="disease-info">
+
+        {% if disease_name == 'Anthracnose' %}
+          <div class="disease-section">
+            <h3 class="disease-name">ANTHRACNOSE</h3>
+            <p class="disease-description">Anthracnose is a fungal disease that causes dark lesions on fruit surfaces and can lead to rot.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Prevention and Treatment:</h4>
+            <ol class="symptoms-list">
+              <li>Remove and destroy all infected plant material to prevent spread</li>
+              <li>Apply copper-based fungicides every 7-14 days during wet seasons</li>
+              <li>Improve air circulation by proper pruning and spacing of trees</li>
+              <li>Avoid overhead irrigation to reduce leaf wetness periods</li>
+              <li>Harvest fruits carefully to minimize injuries that allow fungal entry</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Dry Rot' %}
+          <div class="disease-section">
+            <h3 class="disease-name">DRY ROT</h3>
+            <p class="disease-description">Dry rot affects post-harvest fruits, leading to dehydration, hardening, and decay.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Prevention and Management:</h4>
+            <ol class="symptoms-list">
+              <li>Store fruits in cool (10-13°C), dry conditions with good ventilation</li>
+              <li>Sort and remove damaged fruits before storage</li>
+              <li>Use clean, sanitized containers to prevent contamination</li>
+              <li>Apply postharvest fungicide dips if available and approved</li>
+              <li>Monitor stored fruits regularly and remove any showing early signs</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Gummosis' %}
+          <div class="disease-section">
+            <h3 class="disease-name">GUMMOSIS</h3>
+            <p class="disease-description">Gummosis is a condition where the tree exudes gum due to stress, infections, or physical injury.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Treatment and Prevention:</h4>
+            <ol class="symptoms-list">
+              <li>Carefully scrape away diseased bark until healthy tissue is reached</li>
+              <li>Disinfect wounds with copper fungicide or approved tree paint</li>
+              <li>Improve drainage if soil is waterlogged around the tree</li>
+              <li>Avoid mechanical injuries to trunk and major branches</li>
+              <li>Maintain proper nutrition and watering to reduce tree stress</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Half ripe' %}
+          <div class="disease-section">
+            <h3 class="disease-name">HALF RIPE FRUIT</h3>
+            <p class="disease-description">This mangosteen is in a mid-ripening stage. Allow it to ripen fully before consumption or sale.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Handling Recommendations:</h4>
+            <ol class="symptoms-list">
+              <li>Store at room temperature (20-25°C) away from direct sunlight</li>
+              <li>Place with ethylene-producing fruits like bananas to accelerate ripening</li>
+              <li>Check daily by gently pressing - ripe when slightly soft</li>
+              <li>Once ripe, refrigerate to slow further ripening (10-13°C)</li>
+              <li>Handle carefully to avoid bruising which leads to uneven ripening</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Healthy ripe' %}
+          <div class="disease-section">
+            <h3 class="disease-name">HEALTHY RIPE FRUIT</h3>
+            <p class="disease-description">This mangosteen is ripe and in excellent condition. Enjoy fresh or store appropriately.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Storage and Handling:</h4>
+            <ol class="symptoms-list">
+              <li>Store in refrigerator at 10-13°C with high humidity if possible</li>
+              <li>Consume within 3-5 days for best quality and flavor</li>
+              <li>Place in single layer or use dividers to prevent bruising</li>
+              <li>Wash only immediately before consumption to prevent mold</li>
+              <li>For longer storage, consider freezing pulp in airtight containers</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Over ripe' %}
+          <div class="disease-section">
+            <h3 class="disease-name">OVER RIPE FRUIT</h3>
+            <p class="disease-description">This fruit has passed its optimal ripeness stage. Use promptly or repurpose for processing.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Usage Recommendations:</h4>
+            <ol class="symptoms-list">
+              <li>Inspect carefully - discard if showing mold or fermentation</li>
+              <li>Use immediately in smoothies, juices, or purees</li>
+              <li>Consider making jams, sauces, or desserts that require cooking</li>
+              <li>Remove any discolored or fermented sections before use</li>
+              <li>Refrigerate if not using immediately (consume within 24 hours)</li>
+            </ol>
+          </div>
+
+        {% elif disease_name == 'Raw' %}
+          <div class="disease-section">
+            <h3 class="disease-name">RAW FRUIT</h3>
+            <p class="disease-description">This mangosteen is not yet ripe. Let it mature naturally before consumption.</p>
+            <div class="divider"></div>
+            <h4 class="info-subtitle">Ripening Process:</h4>
+            <ol class="symptoms-list">
+              <li>Leave at room temperature (20-25°C) out of direct sunlight</li>
+              <li>Place in paper bag with ethylene-producing fruits to speed ripening</li>
+              <li>Check daily - ripe when color deepens and fruit yields slightly to pressure</li>
+              <li>Do not refrigerate until fully ripe as cold stops ripening process</li>
+              <li>Expect ripening to take 2-5 days depending on initial maturity</li>
+            </ol>
+          </div>
+
+        {% else %}
+          <div class="disease-section">
+            <h3 class="disease-name">UNKNOWN</h3>
+            <p class="disease-description">The condition of image could not be identified. Please try with a clearer image or different sample.</p>
+            <div class="divider"></div>
+            <ol class="symptoms-list">
+              <li>Ensure proper lighting and focus when taking images</li>
+              <li>Retake the image without background clutter</li>
+              <li>Seek expert assistance if condition persists</li>
+              <li>Check for multiple angles of the fruit</li>
+              <li>Examine both external and internal features</li>
+            </ol>
+          </div>
+        {% endif %} 
+
+      </div>
+    </div>
+
+    <div class="result-actions">
+      <a href="{{ url_for('scan') }}" class="action-button back-button">
+        <i class="fas fa-redo"></i> Scan Another Image
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="action-button">
+        <i class="fas fa-home"></i> Go to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --primary-color: #6d4caf;
+    --primary-hover: #AB40FF;
+    --secondary-color: #607D8B;
+    --secondary-hover: #29373d;
+    --success-color: #4CAF50;
+    --light-bg: #f9f9f9;
+    --border-color: #e0e0e0;
+    --divider-color: #ddd;
+    --text-dark: #333;
+    --text-light: #666;
+    --black-text: #000000;
+  }
+
+  .results-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .results-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+  }
+  
+  .results-title {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+    font-weight: 600;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--divider-color);
+  }
+  
+  .result-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 40px;
+  }
+  
+  .image-section, .info-section {
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .section-title {
+    color: var(--primary-color);
+    font-size: 22px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--divider-color);
+    font-weight: 600;
+  }
+
+  .additional-info-title {
+    color: var(--black-text); /* Black color for "Additional Information" */
+    font-size: 22px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--divider-color);
+    font-weight: 600;
+  }
+  
+  .result-image-container {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    aspect-ratio: 1/1;
+    background-color: #f8f8f8;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+
+  .result-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  
+  .info-section {
+    background-color: var(--light-bg);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  
+  .info-label {
+    font-weight: 600;
+    font-size: 18px;
+  }
+  
+  .info-value {
+    font-size: 18px;
+    color: var(--text-dark);
+    margin-bottom: 10px;
+  }
+
+  .highlight {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 20px;
+  }
+  
+  .confidence-bar {
+    height: 12px;
+    background-color: var(--border-color);
+    border-radius: 6px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  
+  .confidence-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+  }
+  
+  .prevention-list {
+    padding-left: 20px;
+    margin-top: 10px;
+  }
+  
+  .prevention-list li {
+    margin-bottom: 8px;
+    color: var(--text-dark);
+    line-height: 1.5;
+  }
+
+  .divider {
+    height: 1px;
+    background-color: var(--divider-color);
+    margin: 15px 0;
+  }
+  
+  .additional-info {
+    background-color: var(--light-bg);
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  
+  .disease-section {
+    margin-bottom: 20px;
+  }
+
+  .disease-name {
+    color: var(--primary-color);
+    font-size: 25px;
+    font-weight: 700;
+    margin-bottom: 15px;
+  }
+
+  .disease-description {
+    color: var(--text-dark);
+    line-height: 1.6;
+    margin-bottom: 15px;
+    font-size: 18px;
+  }
+
+  .info-subtitle {
+    color: var(--primary-color);
+    font-size: 18px;
+    margin: 15px 0 10px;
+  }
+
+  .symptoms-list {
+    padding-left: 20px;
+  }
+
+  .symptoms-list li {
+    margin-bottom: 8px;
+    color: var(--text-dark);
+    line-height: 1.5;
+    font-size: 17px;
+  }
+  
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .action-button {
+    padding: 12px 25px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+    font-weight: 500;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .action-button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  .back-button {
+    background-color: var(--secondary-color);
+  }
+  
+  .back-button:hover {
+    background-color: var(--secondary-hover);
+  }
+  
+  @media (max-width: 768px) {
+    .results-container {
+      padding: 20px;
+    }
+    
+    .result-content {
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .results-title {
+      font-size: 24px;
+    }
+    
+    .section-title, .additional-info-title {
+      font-size: 20px;
+    }
+    
+    .result-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .action-button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .results-page-container {
+      padding: 10px;
+    }
+    
+    .results-container {
+      padding: 15px;
+    }
+    
+    .info-value {
+      font-size: 16px;
+    }
+    
+    .highlight {
+      font-size: 25px;
+    }
+  }
+</style>
+{% endblock %}

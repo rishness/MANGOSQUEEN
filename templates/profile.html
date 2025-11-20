@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<section class="page-section" id="profile">
+    <div class="container">
+        <div class="text-center mb-4">
+            <h2 class="section-heading text-uppercase">Profile</h2>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Display flash messages -->
+                <div id="flash-messages">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                
+                <!-- User Profile Form -->
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Update Profile</h4>
+                        <form id="profileForm" method="POST">
+                            <input type="hidden" name="action" value="update_profile">
+                            <input type="hidden" id="original_name" value="{{ user.name }}">
+                            <input type="hidden" id="original_username" value="{{ user.username }}">
+                            <input type="hidden" id="original_email" value="{{ user.email }}">
+                            <!-- Add auth_method detection -->
+                            <input type="hidden" id="auth_method" value="{{ user.auth_method if user.auth_method else 'manual' }}">
+                            
+                            <div class="mb-3 row">
+                                <label for="name" class="col-sm-3 col-form-label">Name:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control profile-field" id="name" name="name" value="{{ user.name }}">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="username" class="col-sm-3 col-form-label">Username:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" class="form-control profile-field" id="username" name="username" value="{{ user.username }}">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="email" class="col-sm-3 col-form-label">Email:</label>
+                                <div class="col-sm-9">
+                                    <input type="email" class="form-control profile-field" id="email" name="email" value="{{ user.email }}">
+                                </div>
+                            </div>
+                            
+                            <!-- Password Authentication Section (for manual users) -->
+                            <div id="password-auth-section" style="display: none;">
+                                <hr>
+                                <h5 class="mb-3">Password Authentication Required</h5>
+                                <div class="mb-3 row">
+                                    <label for="current_password" class="col-sm-3 col-form-label">Current Password:</label>
+                                    <div class="col-sm-9">
+                                        <input type="password" class="form-control" id="current_password" name="current_password">
+                                        <div class="form-text">Enter your current password to confirm changes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Email Verification Section (for Google users) -->
+                            <div id="email-verification-section" style="display: none;">
+                                <hr>
+                                <h5 class="mb-3">Email Verification Required</h5>
+                                <div class="mb-3 row">
+                                    <div class="col-sm-12">
+                                        <button type="button" class="btn btn-outline-primary" id="send-verification-btn">
+                                            Send Verification Code to Email
+                                        </button>
+                                        <div class="form-text">We'll send a verification code to your email address</div>
+                                    </div>
+                                </div>
+                                <div class="mb-3 row" id="verification-code-row" style="display: none;">
+                                    <label for="verification_code" class="col-sm-3 col-form-label">Verification Code:</label>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="verification_code" name="verification_code" maxlength="6">
+                                        <div class="form-text">Enter the 6-digit code sent to your email</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Password Change Section (only for manual users) -->
+                            <div id="change-password-section">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="change_password" name="change_password">
+                                        <label class="form-check-label" for="change_password">
+                                            Change Password
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div id="password-section" style="display: none;">
+                                    <div class="mb-3 row">
+                                        <label for="new_password" class="col-sm-3 col-form-label">New Password:</label>
+                                        <div class="col-sm-9">
+                                            <input type="password" class="form-control" id="new_password" name="new_password">
+                                            <div class="form-text">Password must be at least 6 characters long</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3 row">
+                                        <label for="confirm_password" class="col-sm-3 col-form-label">Confirm Password:</label>
+                                        <div class="col-sm-9">
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileFields = document.querySelectorAll('.profile-field');
+        const passwordAuthSection = document.getElementById('password-auth-section');
+        const emailVerificationSection = document.getElementById('email-verification-section');
+        const changePasswordSection = document.getElementById('change-password-section');
+        const originalName = document.getElementById('original_name').value;
+        const originalUsername = document.getElementById('original_username').value;
+        const originalEmail = document.getElementById('original_email').value;
+        const authMethod = document.getElementById('auth_method').value;
+        const changePasswordCheckbox = document.getElementById('change_password');
+        const passwordSection = document.getElementById('password-section');
+        const sendVerificationBtn = document.getElementById('send-verification-btn');
+        const verificationCodeRow = document.getElementById('verification-code-row');
+        
+        // Hide password change section for Google users
+        if (authMethod === 'google') {
+            changePasswordSection.style.display = 'none';
+        }
+        
+        // Check for profile field changes
+        profileFields.forEach(field => {
+            field.addEventListener('input', function() {
+                checkForChanges();
+            });
+        });
+        
+        // Show/hide password change section (only for manual users)
+        if (authMethod === 'manual') {
+            changePasswordCheckbox.addEventListener('change', function() {
+                passwordSection.style.display = this.checked ? 'block' : 'none';
+                checkForChanges();
+            });
+        }
+        
+        // Send verification code button (for Google users)
+        sendVerificationBtn.addEventListener('click', function() {
+            // Disable button and show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+            
+            // Make AJAX request to send verification code
+            fetch('/send-verification-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: document.getElementById('email').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showFlashMessage('success', 'Verification code sent to your email!');
+                    // Show verification code input
+                    verificationCodeRow.style.display = 'block';
+                    // Update button text
+                    this.innerHTML = 'Code Sent';
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('btn-success');
+                } else {
+                    // Show error message
+                    showFlashMessage('danger', data.message || 'Failed to send verification code');
+                    // Re-enable button
+                    this.disabled = false;
+                    this.innerHTML = 'Send Verification Code to Email';
+                }
+            })
+            .catch(error => {
+                showFlashMessage('danger', 'Error sending verification code');
+                this.disabled = false;
+                this.innerHTML = 'Send Verification Code to Email';
+            });
+        });
+        
+        function checkForChanges() {
+            const nameChanged = document.getElementById('name').value !== originalName;
+            const usernameChanged = document.getElementById('username').value !== originalUsername;
+            const emailChanged = document.getElementById('email').value !== originalEmail;
+            const passwordChangeRequested = changePasswordCheckbox && changePasswordCheckbox.checked;
+            
+            // Show appropriate auth section based on user's auth method
+            if (nameChanged || usernameChanged || emailChanged || passwordChangeRequested) {
+                if (authMethod === 'manual') {
+                    passwordAuthSection.style.display = 'block';
+                    emailVerificationSection.style.display = 'none';
+                } else if (authMethod === 'google') {
+                    emailVerificationSection.style.display = 'block';
+                    passwordAuthSection.style.display = 'none';
+                }
+            } else {
+                passwordAuthSection.style.display = 'none';
+                emailVerificationSection.style.display = 'none';
+            }
+        }
+        
+        function showFlashMessage(type, message) {
+            const flashContainer = document.getElementById('flash-messages');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.setAttribute('role', 'alert');
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            flashContainer.appendChild(alertDiv);
+            
+            // Auto-hide after 8 seconds
+            setTimeout(function() {
+                alertDiv.style.transition = "opacity 10s";
+                alertDiv.style.opacity = "0";
+                setTimeout(function() {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 10000);
+            }, 80000);
+        }
+        
+        // Auto-hide flash messages after 8 seconds
+        const flashMessages = document.querySelectorAll('.alert');
+        if (flashMessages.length > 0) {
+            setTimeout(function() {
+                flashMessages.forEach(function(alert) {
+                    alert.style.transition = "opacity 1s";
+                    alert.style.opacity = "0";
+                    setTimeout(function() {
+                        if (alert.parentNode) {
+                            alert.parentNode.removeChild(alert);
+                        }
+                    }, 1000);
+                });
+            }, 8000);
+        }
+        
+        // Form validation
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', function(event) {
+            const nameChanged = document.getElementById('name').value !== originalName;
+            const usernameChanged = document.getElementById('username').value !== originalUsername;
+            const emailChanged = document.getElementById('email').value !== originalEmail;
+            const passwordChangeRequested = changePasswordCheckbox && changePasswordCheckbox.checked;
+            
+            // If nothing changed, prevent form submission
+            if (!nameChanged && !usernameChanged && !emailChanged && !passwordChangeRequested) {
+                event.preventDefault();
+                showFlashMessage('info', 'No changes detected.');
+                return;
+            }
+            
+            // Validate authentication based on auth method
+            if (nameChanged || usernameChanged || emailChanged || passwordChangeRequested) {
+                if (authMethod === 'manual') {
+                    // Check if current password is provided
+                    const currentPassword = document.getElementById('current_password').value;
+                    if (!currentPassword) {
+                        event.preventDefault();
+                        showFlashMessage('danger', 'Please enter your current password to confirm changes.');
+                        return;
+                    }
+                } else if (authMethod === 'google') {
+                    // Check if verification code is provided
+                    const verificationCode = document.getElementById('verification_code').value;
+                    if (!verificationCode) {
+                        event.preventDefault();
+                        showFlashMessage('danger', 'Please enter the verification code sent to your email.');
+                        return;
+                    }
+                }
+            }
+            
+            // Validate password if changing it (only for manual users)
+            if (passwordChangeRequested && authMethod === 'manual') {
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+                
+                if (newPassword.length < 6) {
+                    event.preventDefault();
+                    showFlashMessage('danger', 'Password must be at least 6 characters long.');
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    event.preventDefault();
+                    showFlashMessage('danger', 'Passwords do not match.');
+                    return;
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

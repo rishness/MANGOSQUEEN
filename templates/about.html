@@ -1,0 +1,492 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    ABOUT
+{% endblock %}
+
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Main Container - Non-scrollable -->
+<div class="scan-page-container">
+    <!-- Scan Container - Wider version -->
+    <div class="scan-container">
+        <h2>About MangosQueen</h2>
+        <p class="scan-description">Your Companion for Smart Mangosteen Fruit Detection and Sorting</p>
+        
+        <!-- Mission and Key Features Section - Side by side -->
+        <div class="row mb-5">
+            <!-- Left side - Our Mission -->
+            <div class="col-lg-6">
+                <div class="card shadow h-100">
+                    <div class="card-body">
+                        <h4 class="card-title">Our Mission</h4>
+                        <p class="card-text">
+                            MangosQueen is dedicated to revolutionizing mangosteen cultivation and production through cutting-edge technology. Our platform combines advanced image recognition, machine learning, and agricultural expertise to help farmers and producers identify diseases early, implement effective prevention strategies, and optimize fruit sorting processes.
+                        </p>
+                        <p class="card-text">
+                            We aim to increase mangosteen crop yields, improve fruit quality, reduce waste, and support sustainable farming practices across the industry.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right side - Key Features -->
+            <div class="col-lg-6">
+                <div class="card shadow h-100">
+                    <div class="card-body">
+                        <h4 class="card-title">Key Features</h4>
+                        
+                        <!-- Disease Detection Feature -->
+                        <div class="mb-4">
+                            <h5>Disease Detection</h5>
+                            <p>
+                                Our advanced AI system analyzes images of mangosteen plants and fruits to identify common diseases with high accuracy. Simply upload a photo, and our system will provide a diagnosis within seconds.
+                            </p>
+                        </div>
+                        
+                        <!-- Automated Fruit Sorting Feature -->
+                        <div>
+                            <h5>Automated Fruit Sorting</h5>
+                            <p>
+                                Our intelligent sorting system classifies mangosteen fruits based on size, ripeness, and quality. This technology helps producers streamline their operations and ensure consistent product quality.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tutorials Section -->
+        <div class="row mb-5">
+            <div class="col-lg-12">
+                <div class="section-header">
+                    <div class="section-icon">📚</div>
+                    <h3 class="section-title">Tutorials</h3>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow d-flex flex-column">
+                            <div class="card-body">
+                                <h5 class="card-title">How to Use Disease Detection</h5>
+                                <ol>
+                                    <li>Take a clear photo of the affected plant part</li>
+                                    <li>Upload the image to our detection system</li>
+                                    <li>Wait for the analysis results</li>
+                                    <li>Review the diagnosis and recommended treatments</li>
+                                </ol>
+                                <div class="mt-auto">
+                                    <a href="#" class="btn btn-primary">View Tutorial</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow d-flex flex-column">
+                            <div class="card-body">
+                                <h5 class="card-title">Setting Up Automated Sorting</h5>
+                                <ol>
+                                    <li>Calibrate the sorting system</li>
+                                    <li>Set quality parameters for classification</li>
+                                    <li>Connect to your production line</li>
+                                    <li>Monitor and adjust as needed</li>
+                                </ol>
+                                <div class="mt-auto">
+                                    <a href="#" class="btn btn-primary">View Tutorial</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow d-flex flex-column">
+                            <div class="card-body">
+                                <h5 class="card-title">Interpreting Results</h5>
+                                <ol>
+                                    <li>Understand confidence scores</li>
+                                    <li>Differentiate between similar diseases</li>
+                                    <li>Apply appropriate treatments</li>
+                                    <li>Document outcomes for future reference</li>
+                                </ol>
+                                <div class="mt-auto">
+                                    <a href="#" class="btn btn-primary">View Tutorial</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAQ Section -->
+        <div class="row mb-5">
+            <div class="col-lg-12">
+                <div class="section-header">
+                    <div class="section-icon">❓</div>
+                    <h3 class="section-title">Frequently Asked Questions</h3>
+                    <div class="section-divider"></div>
+                </div>
+                <div class="accordion" id="faqAccordion">
+                    <!-- FAQ Item 1 -->
+                    <div class="card mb-2">
+                        <div class="card-header" id="headingOne">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link w-100 text-left" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                    What diseases can MangosQueen detect in mangosteen plants?
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                MangosQueen can detect a range of common mangosteen diseases including anthracnose, stem canker, leaf blight, root rot, and various fungal infections. Our AI system is continuously learning and improving its detection capabilities for more accurate diagnosis.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 2 -->
+                    <div class="card mb-2">
+                        <div class="card-header" id="headingTwo">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link w-100 text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    How accurate is the disease detection system?
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Our disease detection system has an accuracy rate of over 90% for most common mangosteen diseases. The accuracy depends on image quality and disease visibility. We continuously train our AI with new data to improve detection accuracy and add new disease types.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 3 -->
+                    <div class="card mb-2">
+                        <div class="card-header" id="headingThree">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link w-100 text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    What criteria does the automated sorting system use to classify fruits?
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Our automated sorting system classifies mangosteen fruits based on size (diameter), weight, ripeness level (using color analysis), external quality (looking for blemishes or defects), and firmness. The system can be customized to sort according to specific market standards or producer requirements.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 4 -->
+                    <div class="card mb-2">
+                        <div class="card-header" id="headingFour">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link w-100 text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                    Can MangosQueen integrate with existing farming equipment?
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Yes, MangosQueen's automated sorting system is designed to integrate with most standard conveyor systems and production lines. Our team can provide custom integration solutions to work with your existing equipment. For disease detection, our mobile application works independently on any smart device with a camera.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- FAQ Item 5 -->
+                    <div class="card mb-2">
+                        <div class="card-header" id="headingFive">
+                            <h5 class="mb-0">
+                                <button class="btn btn-link w-100 text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+                                    What support does MangosQueen provide for implementation and training?
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseFive" class="collapse" aria-labelledby="headingFive" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                We provide comprehensive support including initial setup assistance, staff training sessions, detailed user manuals, video tutorials, and ongoing technical support. For enterprise clients, we offer customized training programs and dedicated support personnel to ensure smooth implementation and operation.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Section -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card shadow">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Have Questions?</h4>
+                        <p class="card-text">We're here to help you get the most out of our mangosteen disease detection and sorting systems.</p>
+                        <a href="mailto:mangosqueen.support@gmail.com" class="btn btn-primary">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ----------------------------ABOUT PAGE----------------------------- */
+/* Custom CSS for MangoSqueen About Page */
+
+.scan-page-container {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wider container */
+.scan-container {
+    max-width: 1700px;  /* Increased from 1200px */
+    
+    margin: 0 auto;
+    padding: 2rem;  /* Increased padding */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.scan-container h2 {
+    color: #512188;
+    margin-bottom: 0.5rem;
+    font-size: 2.2rem;  /* Slightly larger */
+    text-align: center;
+}
+
+.scan-description {
+    color: #666;
+    margin-bottom: 2rem;  /* More spacing */
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+/* Section Header Styles */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.section-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    color: #4a2770;
+}
+
+.section-title {
+    color: #4a2770;
+    font-weight: 700;
+    font-size: 2rem;
+    margin: 0;
+    text-align: center;
+    position: relative;
+    padding: 0 1rem;
+}
+
+.section-divider {
+    flex-grow: 1;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #4a2770, transparent);
+    margin: 0 1rem;
+}
+
+.section-subtitle {
+    color: #4a2770;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.4rem;
+}
+
+/* Mangosteen Icon Styling */
+.mangosteen-icon {
+    color: #8a2be2; /* Purple color similar to mangosteen */
+    position: relative;
+}
+
+.mangosteen-icon:after {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid #8a2be2;
+    border-radius: 50%;
+    opacity: 0.3;
+}
+
+/* Global styles */
+body {
+  font-family: 'Roboto', sans-serif;
+  color: #333;
+  line-height: 1.6;
+}
+
+.page-section {
+  padding: 6rem 0;
+}
+
+/* Card styling */
+.card {
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-title {
+  color: #4a2770;
+  font-weight: 600;
+}
+
+.shadow {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #4a2770;
+  border-color: #4a2770;
+}
+
+.btn-primary:hover {
+  background-color: #3a1d59;
+  border-color: #3a1d59;
+}
+
+.btn-outline-primary {
+  color: #4a2770;
+  border-color: #4a2770;
+}
+
+.btn-outline-primary:hover {
+  background-color: #4a2770;
+  border-color: #4a2770;
+}
+
+/* FAQ Accordion styling */
+#faqAccordion .btn-link {
+  color: #4a2770;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 15px;
+}
+
+#faqAccordion .btn-link:hover,
+#faqAccordion .btn-link:focus {
+  text-decoration: none;
+  color: #3a1d59;
+}
+
+#faqAccordion .card {
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+#faqAccordion .card-header {
+  padding: 0;
+  background-color: #f8f9fa;
+}
+
+/* Team section */
+.team-member img {
+  border: 7px solid #fff;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+.social-icons a {
+  margin: 0 5px;
+}
+
+.social-icons i {
+  font-size: 1.1rem;
+}
+
+/* Mangosteen facts styling */
+.mangosteen-facts {
+  list-style: none;
+  padding-left: 0;
+}
+
+.mangosteen-facts li {
+  margin-bottom: 10px;
+  position: relative;
+  padding-left: 25px;
+}
+
+.mangosteen-facts li:before {
+  content: "▸";
+  color: #8a2be2;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+/* Keep tutorial buttons aligned at bottom */
+.card.h-100 {
+  display: flex;
+  flex-direction: column;
+}
+
+.card.h-100 .card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.mt-auto {
+  margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+  }
+  
+  .section-divider {
+    width: 80%;
+    height: 1px;
+    margin: 1rem 0;
+  }
+  
+  .section-icon {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1.2rem;
+  }
+}
+</style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+<!-- JavaScript for handling interactions -->
+<script>
+  $(document).ready(function() {
+    // Initialize tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>
+{% endblock %}

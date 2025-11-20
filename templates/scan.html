@@ -1,0 +1,1100 @@
+
+{% extends "base.html" %}
+
+{% block title %}
+MANGOSQUEEN
+{% endblock %}
+
+{% block content %}
+<!-- Main Container - Non-scrollable -->
+<div class="scan-page-container">
+  <!-- Scan Container -->
+  <div class="scan-container">
+    <h2>Mangosteen Disease Scanner</h2>
+    <p class="scan-description">Upload an image, use your camera, or enable real-time detection for mangosteen plants</p>
+
+    <!-- Tab Navigation -->
+    <div class="scan-tabs">
+      <button class="tab-btn active" data-tab="upload">Upload Image</button>
+      <button class="tab-btn" data-tab="camera">Use Camera</button>
+      <button class="tab-btn" data-tab="realtime">Real-Time Detection</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Upload Image Tab -->
+      <div id="upload-tab" class="tab-pane active">
+        <div class="upload-area">
+          <form id="upload-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+            <div class="file-input-container">
+              <input type="file" id="image-upload" name="file" accept="image/*" class="file-input">
+              <label for="image-upload" class="upload-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Choose Image</span>
+              </label>
+              <button id="delete-image-btn" type="button" class="delete-button hidden">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+            <div id="image-preview-container" class="preview-container hidden">
+              <img id="image-preview" class="preview-image">
+            </div>
+            <div class="upload-buttons">
+              <button id="scan-btn" type="submit" class="scan-button" disabled>Scan Image</button>
+            </div>
+          </form>
+          <div id="upload-error" class="error-message hidden"></div>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+
+      <!-- Camera Tab -->
+      <div id="camera-tab" class="tab-pane">
+        <div class="camera-area">
+          <div class="camera-preview">
+            <video id="camera-feed" class="camera-feed hidden" autoplay playsinline></video>
+            <div id="camera-overlay" class="camera-overlay hidden"></div>
+            <img id="capture-preview" class="capture-preview hidden">
+          </div>
+          <form id="camera-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" id="camera-image-data" name="image_data">
+            <div class="camera-controls">
+              <button id="start-camera-btn" type="button" class="camera-button">
+                <i class="fas fa-camera"></i> Start Camera
+              </button>
+              <button id="capture-btn" type="button" class="camera-button" disabled>
+                <i class="fas fa-circle"></i> Capture
+              </button>
+              <button id="stop-camera-btn" type="button" class="camera-button" disabled>
+                <i class="fas fa-stop"></i> Stop
+              </button>
+              <button id="scan-camera-btn" type="submit" class="scan-button" disabled>Scan Image</button>
+            </div>
+          </form>
+          <div id="camera-error" class="error-message hidden"></div>
+        </div>
+      </div>
+
+      <!-- Real-Time Detection Tab -->
+      <div id="realtime-tab" class="tab-pane">
+        <div class="realtime-area">
+          <div class="realtime-preview">
+            <video id="realtime-feed" class="realtime-feed hidden" autoplay playsinline></video>
+            <div id="realtime-overlay" class="realtime-overlay">
+              <span>Real-time detection is off</span>
+            </div>
+            <canvas id="realtime-canvas" style="display: none;"></canvas>
+            <div id="realtime-results" class="realtime-results hidden">
+              <div class="detection-info">
+                <div class="disease-display">
+                  <span class="disease-label">Disease:</span>
+                  <span id="disease-name">-</span>
+                </div>
+                <div class="confidence-display">
+                  <span class="confidence-label">Confidence:</span>
+                  <span id="confidence-value">-</span>
+                </div>
+                <div class="fps-display">
+                  <span class="fps-label">FPS:</span>
+                  <span id="fps-value">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="realtime-controls">
+            <button id="start-realtime-btn" type="button" class="camera-button">
+              <i class="fas fa-play"></i> Start Real-Time Detection
+            </button>
+            <button id="stop-realtime-btn" type="button" class="camera-button" disabled>
+              <i class="fas fa-stop"></i> Stop Detection
+            </button>
+            <button id="save-detection-btn" type="button" class="action-button" disabled>
+              <i class="fas fa-save"></i> Save Current Detection
+            </button>
+          </div>
+          <div id="realtime-error" class="error-message hidden"></div>
+          <div id="realtime-status" class="status-message hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .scan-page-container {
+    margin-top: 1.5rem;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wider container */
+.scan-container {
+    max-width: 1400px;  /* Increased from 1200px */
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;  /* Increased padding */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.scan-container h2 {
+    color: #512188;
+    margin-bottom: 0.5rem;
+    font-size: 2.2rem;  /* Slightly larger */
+}
+
+.scan-description {
+    color: #666;
+    margin-bottom: 2rem;  /* More spacing */
+    font-size: 1.1rem;
+}
+  
+  /* Tab Navigation */
+  .scan-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .tab-btn {
+    padding: 0.8rem 1.5rem;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  
+  .tab-btn:hover {
+    color: #6a28a7;
+  }
+  
+  .tab-btn.active {
+    color: #6a28a7;
+  }
+  
+  .tab-btn.active:after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #6a28a7;
+  }
+  
+  /* Tab Content */
+  .tab-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  
+  .tab-pane {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  .tab-pane.active {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Upload Area */
+  .upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    height: 100%;
+  }
+  
+  .file-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .file-input {
+    display: none;
+  }
+  
+  .upload-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border: 2px dashed #6a28a7;
+    border-radius: 6px;
+    color: #6a28a7;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+  }
+  
+  .upload-label:hover {
+    background-color: #f9f4ff;
+  }
+  
+  .upload-label i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  .delete-button {
+    padding: 0.5rem 1rem;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+  }
+  
+  .delete-button:hover {
+    background-color: #d32f2f;
+  }
+  
+  /* Updated preview container size */
+.preview-container {
+    width: 100%;
+    max-width: 800px;
+    height: 500px; /* Set fixed height */
+    border-radius: 10px;
+    box-shadow: 0 3px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 1rem auto;
+}
+
+/* Image scales inside preview */
+.preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* Wraps the upload buttons and keeps them from shifting */
+.upload-tools {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Aligns the form center */
+.upload-area form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+  
+  .upload-buttons {
+    margin-top: 0.5rem;
+  }
+  
+  /* Camera Area */
+  .camera-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    height: 100%;
+  }
+  
+  .camera-preview {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0.5rem 0;
+  }
+  
+  .camera-feed, .capture-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  
+  .capture-preview {
+    margin-left: 1rem;
+  }
+  
+  .camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+  }
+  
+  .camera-controls {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  /* Real-Time Camera Area */
+.realtime-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  height: 100%;
+}
+
+.realtime-preview {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  height: 500px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0.5rem 0;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+
+.realtime-feed {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.realtime-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.realtime-results {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background-color: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  z-index: 10;
+  min-width: 200px;
+}
+
+.detection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+  
+.confidence-display, .disease-display, .fps-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+  
+.confidence-label, .disease-label, .fps-label {
+  font-weight: bold;
+  color: #ccc;
+}
+  
+#confidence-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+  
+#disease-name {
+  font-size: 1rem;
+  color: #FFC107;
+  font-weight: bold;
+}
+
+#fps-value {
+  font-size: 1rem;
+  color: #2196F3;
+  font-weight: bold;
+}
+  
+.realtime-controls {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.status-message {
+  color: #2196F3;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.5rem;
+  background-color: #e3f2fd;
+  border-radius: 4px;
+}
+  
+  /* Buttons */
+  .scan-button, .camera-button, .action-button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .scan-button {
+    background-color: #6a28a7;
+    color: white;
+  }
+  
+  .scan-button:hover {
+    background-color: #512188;
+  }
+  
+  .scan-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .camera-button {
+    background-color: #f0e6ff;
+    color: #6a28a7;
+  }
+  
+  .camera-button:hover {
+    background-color: #e0ccff;
+  }
+  
+  .camera-button:disabled {
+    background-color: #eeeeee;
+    color: #aaaaaa;
+    cursor: not-allowed;
+  }
+  
+  .action-button {
+    background-color: white;
+    color: #6a28a7;
+    border: 1px solid #6a28a7;
+  }
+  
+  .action-button:hover {
+    background-color: #f9f4ff;
+  }
+
+  .action-button:disabled {
+    background-color: #f5f5f5;
+    color: #aaaaaa;
+    border-color: #ddd;
+    cursor: not-allowed;
+  }
+  
+  /* Results Area */
+  .results-container {
+    display: flex;
+    gap: 1.5rem;
+    text-align: left;
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+  }
+  
+  .result-image-container {
+    flex: 1;
+    max-width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  
+  .result-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  
+  .result-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+  
+  .result-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .result-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+  
+  /* Error Messages */
+  .error-message {
+    color: #f44336;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
+  /* Utility Classes */
+  .hidden {
+    display: none !important;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .scan-container {
+      padding: 1rem;
+    }
+
+    .file-input-container,
+    .camera-controls,
+    .realtime-controls {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .upload-label,
+    .delete-button,
+    .camera-button,
+    .scan-button,
+    .action-button {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .preview-container,
+    .camera-preview,
+    .realtime-preview {
+      height: auto;
+      max-height: 350px;
+    }
+
+    .preview-image,
+    .camera-feed,
+    .capture-preview,
+    .realtime-feed {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .realtime-results {
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      font-size: 0.85rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .scan-container h2 {
+      font-size: 1.8rem;
+    }
+
+    .scan-description {
+      font-size: 1rem;
+    }
+
+    .tab-btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
+    }
+
+    .results-container {
+      flex-direction: column;
+    }
+
+    .result-image-container,
+    .result-info {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .camera-controls,
+    .realtime-controls {
+      flex-direction: column;
+    }
+
+    .camera-button,
+    .scan-button,
+    .action-button {
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .camera-overlay,
+    .realtime-overlay {
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .realtime-results {
+      font-size: 0.8rem;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      padding: 10px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const tabId = this.getAttribute('data-tab');
+        
+        // Update active tab button
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update active tab pane
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+        
+        // Stop any active camera streams when switching tabs
+        if (tabId !== 'camera') {
+          stopCamera();
+        }
+        if (tabId !== 'realtime') {
+          stopRealTimeDetection();
+        }
+        
+        // Clear any error messages
+        document.getElementById('upload-error').classList.add('hidden');
+        document.getElementById('camera-error').classList.add('hidden');
+        const realtimeError = document.getElementById('realtime-error');
+        if (realtimeError) {
+          realtimeError.classList.add('hidden');
+        }
+      });
+    });
+    
+    // Upload Image functionality
+    const imageUpload = document.getElementById('image-upload');
+    const imagePreview = document.getElementById('image-preview');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const deleteImageBtn = document.getElementById('delete-image-btn');
+    const scanBtn = document.getElementById('scan-btn');
+    const uploadError = document.getElementById('upload-error');
+    
+    imageUpload.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(event) {
+          imagePreview.src = event.target.result;
+          imagePreviewContainer.classList.remove('hidden');
+          deleteImageBtn.classList.remove('hidden');
+          scanBtn.disabled = false;
+          uploadError.classList.add('hidden');
+        };
+        
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+    
+    deleteImageBtn.addEventListener('click', function() {
+      imageUpload.value = '';
+      imagePreview.src = '';
+      imagePreviewContainer.classList.add('hidden');
+      deleteImageBtn.classList.add('hidden');
+      scanBtn.disabled = true;
+    });
+    
+    // Camera functionality
+    const cameraFeed = document.getElementById('camera-feed');
+    const cameraOverlay = document.getElementById('camera-overlay');
+    const capturePreview = document.getElementById('capture-preview');
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    const scanCameraBtn = document.getElementById('scan-camera-btn');
+    const cameraError = document.getElementById('camera-error');
+    const cameraImageData = document.getElementById('camera-image-data');
+    let stream = null;
+    
+    startCameraBtn.addEventListener('click', startCamera);
+    captureBtn.addEventListener('click', captureImage);
+    stopCameraBtn.addEventListener('click', stopCamera);
+    
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' 
+        } 
+      })
+        .then(function(s) {
+          stream = s;
+          cameraFeed.srcObject = stream;
+          cameraFeed.classList.remove('hidden');
+          cameraOverlay.classList.add('hidden');
+          capturePreview.classList.add('hidden');
+          cameraError.classList.add('hidden');
+          
+          startCameraBtn.disabled = true;
+          captureBtn.disabled = false;
+          stopCameraBtn.disabled = false;
+          scanCameraBtn.disabled = true;
+        })
+        .catch(function(err) {
+          console.error("Error accessing camera: ", err);
+          cameraOverlay.textContent = "Could not access camera";
+          cameraOverlay.classList.remove('hidden');
+          cameraError.textContent = "Could not access camera. Please check permissions.";
+          cameraError.classList.remove('hidden');
+        });
+    }
+    
+    function captureImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = cameraFeed.videoWidth;
+      canvas.height = cameraFeed.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(cameraFeed, 0, 0);
+      
+      // Get base64 image data and set to preview
+      const imageDataUrl = canvas.toDataURL('image/jpeg');
+      capturePreview.src = imageDataUrl;
+      capturePreview.classList.remove('hidden');
+      
+      // Set the base64 image data directly to the hidden input field
+      cameraImageData.value = imageDataUrl;
+      
+      // Enable the scan button now that we have image data
+      scanCameraBtn.disabled = false;
+      cameraError.classList.add('hidden');
+    }
+    
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        cameraFeed.srcObject = null;
+        cameraFeed.classList.add('hidden');
+        cameraOverlay.classList.remove('hidden');
+        cameraOverlay.textContent = "Camera is off";
+        
+        startCameraBtn.disabled = false;
+        captureBtn.disabled = true;
+        stopCameraBtn.disabled = true;
+        // Don't disable scan button if there's a capture preview
+        scanCameraBtn.disabled = capturePreview.classList.contains('hidden');
+      }
+    }
+    
+    // Real-Time Detection functionality
+    const realtimeFeed = document.getElementById('realtime-feed');
+    const realtimeOverlay = document.getElementById('realtime-overlay');
+    const realtimeCanvas = document.getElementById('realtime-canvas');
+    const realtimeResults = document.getElementById('realtime-results');
+    const startRealtimeBtn = document.getElementById('start-realtime-btn');
+    const stopRealtimeBtn = document.getElementById('stop-realtime-btn');
+    const saveDetectionBtn = document.getElementById('save-detection-btn');
+    const realtimeError = document.getElementById('realtime-error');
+    const realtimeStatus = document.getElementById('realtime-status');
+    
+    // Detection variables
+    let realtimeStream = null;
+    let detectionInterval = null;
+    let isDetecting = false;
+    let lastDetection = null;
+    let frameCount = 0;
+    let lastFrameTime = Date.now();
+    
+    startRealtimeBtn.addEventListener('click', startRealTimeDetection);
+    stopRealtimeBtn.addEventListener('click', stopRealTimeDetection);
+    saveDetectionBtn.addEventListener('click', saveCurrentDetection);
+    
+    function startRealTimeDetection() {
+      navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' 
+        } 
+      })
+        .then(function(s) {
+          realtimeStream = s;
+          realtimeFeed.srcObject = realtimeStream;
+          realtimeFeed.classList.remove('hidden');
+          realtimeOverlay.classList.add('hidden');
+          realtimeResults.classList.remove('hidden');
+          realtimeError.classList.add('hidden');
+          
+          // Update button states
+          startRealtimeBtn.disabled = true;
+          stopRealtimeBtn.disabled = false;
+          saveDetectionBtn.disabled = false;
+          
+          // Show status
+          realtimeStatus.textContent = "Real-time detection started. Processing frames...";
+          realtimeStatus.classList.remove('hidden');
+          
+          // Start detection loop
+          isDetecting = true;
+          startDetectionLoop();
+        })
+        .catch(function(err) {
+          console.error("Error accessing camera for real-time detection: ", err);
+          realtimeOverlay.textContent = "Could not access camera";
+          realtimeOverlay.classList.remove('hidden');
+          realtimeError.textContent = "Could not access camera. Please check permissions.";
+          realtimeError.classList.remove('hidden');
+        });
+    }
+    
+    function stopRealTimeDetection() {
+      isDetecting = false;
+      
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
+      
+      if (realtimeStream) {
+        realtimeStream.getTracks().forEach(track => track.stop());
+        realtimeStream = null;
+        realtimeFeed.srcObject = null;
+        realtimeFeed.classList.add('hidden');
+        realtimeOverlay.classList.remove('hidden');
+        realtimeOverlay.textContent = "Real-time detection is off";
+        realtimeResults.classList.add('hidden');
+        
+        startRealtimeBtn.disabled = false;
+        stopRealtimeBtn.disabled = true;
+        saveDetectionBtn.disabled = true;
+        
+        realtimeStatus.classList.add('hidden');
+        
+        // Reset display values
+        document.getElementById('disease-name').textContent = '-';
+        document.getElementById('confidence-value').textContent = '-';
+        document.getElementById('fps-value').textContent = '0';
+      }
+    }
+    
+    function startDetectionLoop() {
+      // Process frames every 500ms (2 FPS) to balance performance and responsiveness
+      detectionInterval = setInterval(() => {
+        if (isDetecting && realtimeFeed.videoWidth > 0) {
+          processCurrentFrame();
+        }
+      }, 500);
+    }
+    
+    function processCurrentFrame() {
+      // Setup canvas for frame capture
+      realtimeCanvas.width = realtimeFeed.videoWidth;
+      realtimeCanvas.height = realtimeFeed.videoHeight;
+      const context = realtimeCanvas.getContext('2d');
+      
+      // Draw current frame to canvas
+      context.drawImage(realtimeFeed, 0, 0);
+      
+      // Convert to base64 for sending to server
+      const imageDataUrl = realtimeCanvas.toDataURL('image/jpeg', 0.8);
+      
+      // Update FPS counter
+      frameCount++;
+      const currentTime = Date.now();
+      if (currentTime - lastFrameTime >= 1000) {
+        const fps = frameCount;
+        document.getElementById('fps-value').textContent = fps.toString();
+        frameCount = 0;
+        lastFrameTime = currentTime;
+      }
+      
+      // Send frame for analysis
+      sendFrameForAnalysis(imageDataUrl);
+    }
+    
+    function sendFrameForAnalysis(imageData) {
+      const formData = new FormData();
+      formData.append('image_data', imageData);
+      formData.append('realtime', 'true');
+      
+      fetch('/realtime-scan', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateDetectionResults(data);
+          lastDetection = data;
+        } else {
+          console.error('Detection error:', data.error);
+          // Don't show error in UI for real-time to avoid flickering
+        }
+      })
+      .catch(error => {
+        console.error('Network error:', error);
+        // Don't show network errors in UI for real-time
+      });
+    }
+    
+    function updateDetectionResults(data) {
+      // Update disease name
+      const diseaseName = document.getElementById('disease-name');
+      diseaseName.textContent = data.predicted_class || 'Unknown';
+      
+      // Update confidence with color coding
+      const confidenceValue = document.getElementById('confidence-value');
+      const confidence = parseFloat(data.confidence) || 0;
+      confidenceValue.textContent = confidence.toFixed(1) + '%';
+      
+      // Color code confidence level
+      if (confidence >= 80) {
+        confidenceValue.style.color = '#4CAF50'; // Green for high confidence
+      } else if (confidence >= 60) {
+        confidenceValue.style.color = '#FF9800'; // Orange for medium confidence
+      } else {
+        confidenceValue.style.color = '#F44336'; // Red for low confidence
+      }
+      
+      // Update disease name color based on type
+      const diseaseNameElement = document.getElementById('disease-name');
+      if (data.predicted_class && data.predicted_class.toLowerCase().includes('healthy')) {
+        diseaseNameElement.style.color = '#4CAF50'; // Green for healthy
+      } else if (data.predicted_class && data.predicted_class !== 'Unknown') {
+        diseaseNameElement.style.color = '#F44336'; // Red for disease detected
+      } else {
+        diseaseNameElement.style.color = '#FFC107'; // Yellow for unknown
+      }
+    }
+    
+    function saveCurrentDetection() {
+      if (!lastDetection || !realtimeStream) {
+        alert('No detection data available to save.');
+        return;
+      }
+      
+      // Capture current frame
+      realtimeCanvas.width = realtimeFeed.videoWidth;
+      realtimeCanvas.height = realtimeFeed.videoHeight;
+      const context = realtimeCanvas.getContext('2d');
+      context.drawImage(realtimeFeed, 0, 0);
+      
+      const imageDataUrl = realtimeCanvas.toDataURL('image/jpeg', 0.9);
+      
+      // Send to server to save
+      const formData = new FormData();
+      formData.append('image_data', imageDataUrl);
+      formData.append('detection_data', JSON.stringify(lastDetection));
+      formData.append('save_detection', 'true');
+      
+      fetch('/save-detection', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Detection saved successfully!');
+          realtimeStatus.textContent = "Detection saved! Continuing real-time analysis...";
+        } else {
+          alert('Error saving detection: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error saving detection:', error);
+        alert('Error saving detection. Please try again.');
+      });
+    }
+    
+    // Form validation
+    document.getElementById('camera-form').addEventListener('submit', function(e) {
+      if (!cameraImageData.value) {
+        e.preventDefault();
+        cameraError.textContent = "No image captured. Please capture an image first.";
+        cameraError.classList.remove('hidden');
+      }
+    });
+    
+    document.getElementById('upload-form').addEventListener('submit', function(e) {
+      if (!imageUpload.files || imageUpload.files.length === 0) {
+        e.preventDefault();
+        uploadError.textContent = "No image selected. Please select an image first.";
+        uploadError.classList.remove('hidden');
+      }
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      stopCamera();
+      stopRealTimeDetection();
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,1333 @@
+{% extends "base.html" %}
+{% block title %}
+MANGOSQUEEN
+{% endblock %}
+{% block content %}
+<!-- Flash Message -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div id="dashboardFlash" class="alert alert-{{ category }}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+<!-- Section 1: Hero -->
+<section class="dashboard-hero" id="section1">
+  <div class="hero-overlay">
+    <div class="hero-content">
+      <h1 class="dashboard-title">WELCOME</h1>
+      <p class="dashboard-sub">i-Scan at Alamin: Mangosteen Mo, Protektado at Bunga'y Sigurado!</p>
+      <a href="{{ url_for('scan') }}" class="scan-btn">SCAN</a>
+    </div>
+  </div>
+</section>
+<!-- Section 2: Statistics and Dashboard -->
+<section class="dashboard-stats" id="section2">
+  <div class="container">
+    <h2 class="section-title">Dashboard Overview</h2>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-5">
+      <div class="col-md-4 mb-4">
+        <div class="stat-card total-images">
+          <div class="stat-icon">
+            <i class="fas fa-images"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="totalImages">0</h3>
+            <p>Total Uploaded Images</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="stat-card disease-count">
+          <div class="stat-icon">
+            <i class="fas fa-bug"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="totalDiseases">0</h3>
+            <p>Overall Disease Counts</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="stat-card common-disease">
+          <div class="stat-icon">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="mostCommonDisease">-</h3>
+            <p>Most Predicted Disease</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bar Graph -->
+    <div class="graph-container mb-5">
+      <canvas id="diseaseBarGraph"></canvas>
+    </div>
+    
+    <!-- View History Button -->
+    <div class="text-center mb-5">
+      <button class="btn btn-primary btn-lg view-history-btn" data-bs-toggle="modal" data-bs-target="#historyModal">
+        <i class="fas fa-history me-2"></i>View Detection History
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Enhanced History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content enhanced-modal">
+      <div class="modal-header enhanced-header">
+        <div class="header-content">
+          <i class="fas fa-history header-icon"></i>
+          <div>
+            <h5 class="modal-title" id="historyModalLabel">Detection History</h5>
+            <p class="modal-subtitle">Comprehensive analysis of your scanned mangosteen data</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close enhanced-close" data-bs-dismiss="modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body enhanced-body">
+        <!-- Enhanced Filter Controls -->
+        <div class="filter-section">
+          <div class="filter-header">
+            <i class="fas fa-filter"></i>
+            <h3>Filter & Export Options</h3>
+          </div>
+          
+          <div class="filter-grid">
+            <div class="filter-group">
+              <label for="diseaseFilter">
+                <i class="fas fa-virus"></i>
+                Disease Type
+              </label>
+              <select id="diseaseFilter" class="form-select">
+                <option value="all">All Types</option>
+                <option value="Anthracnose">Anthracnose</option>
+                <option value="Dry Rot">Dry Rot</option>
+                <option value="Gummosis">Gummosis</option>
+                <option value="Raw">Raw</option>
+                <option value="Over Ripe">Over Ripe</option>
+                <option value="Half Ripe">Half Ripe</option>
+                <option value="Healthy Ripe">Healthy Ripe</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="startDateFilter">
+                <i class="fas fa-calendar-alt"></i>
+                Date Range
+              </label>
+              <div class="date-range-container">
+                <input type="date" id="startDateFilter" class="form-control date-input" placeholder="Start Date">
+                <span class="date-separator">to</span>
+                <input type="date" id="endDateFilter" class="form-control date-input" placeholder="End Date">
+              </div>
+            </div>
+
+            <div class="filter-actions">
+              <button id="applyDateFilterBtn" class="btn btn-filter">
+                <i class="fas fa-check"></i> Apply
+              </button>
+              <button id="resetDateFilterBtn" class="btn btn-reset">
+                <i class="fas fa-refresh"></i> Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Export Actions -->
+          <div class="export-section">
+            <button id="printReportBtn" class="btn btn-print">
+              <i class="fas fa-print"></i> Print Report
+            </button>
+            <button id="downloadReportBtn" class="btn btn-download">
+              <i class="fas fa-download"></i> Download CSV
+            </button>
+          </div>
+        </div>
+        
+        <!-- Enhanced Table Container -->
+        <div class="table-section">
+          <div class="table-header">
+            <h4><i class="fas fa-table"></i> Detection Records</h4>
+            <div class="table-info">
+              <span id="recordCount" class="record-count">0 records</span>
+            </div>
+          </div>
+          
+          <div class="scrollable-table-container">
+            <table id="historyTable" class="enhanced-table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-clock"></i> Date-Time Scanned</th>
+                  <th><i class="fas fa-file-image"></i> File Name</th>
+                  <th><i class="fas fa-microscope"></i> Prediction</th>
+                  <th><i class="fas fa-percentage"></i> Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Table rows populated dynamically -->
+              </tbody>
+            </table>
+            
+            <div id="noHistoryData" class="no-data-display" style="display: none;">
+              <div class="no-data-content">
+                <i class="fas fa-search no-data-icon"></i>
+                <h4>No Detection History Available</h4>
+                <p>Start scanning mangosteen images to see your detection history here</p>
+                <a href="{{ url_for('scan') }}" class="btn btn-scan">
+                  <i class="fas fa-camera"></i> Start Scanning
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer enhanced-footer">
+        <div class="footer-info">
+          <i class="fas fa-info-circle"></i>
+          <span>Data refreshes automatically every 5 minutes</span>
+        </div>
+        <button type="button" class="btn btn-close-modal" data-bs-dismiss="modal">
+          <i class="fas fa-times"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Font Awesome -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+<!-- Enhanced JavaScript for Dashboard -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Initialize elements
+      const diseaseChartCtx = document.getElementById('diseaseBarGraph').getContext('2d');
+      const historyTable = document.getElementById('historyTable');
+      const currentUsername = "{{ session.get('username', '') }}";
+      const currentUserId = "{{ session.get('user_id', '') }}";
+      
+      // State variables
+      let diseaseChart;
+      let allHistoryData = [];
+      let originalHistoryData = [];
+      
+      // Initialize the dashboard
+      initDashboard();
+      
+      // Main initialization function
+      async function initDashboard() {
+          await loadDiseaseData();
+          setupEventListeners();
+          initializeDateFilters();
+          startAutoRefresh();
+      }
+      
+      // Initialize date filters with default values
+      function initializeDateFilters() {
+        document.getElementById('startDateFilter').value = '';
+        document.getElementById('endDateFilter').value = '';
+      }
+      
+      // Load disease data for chart and history table
+      async function loadDiseaseData() {
+          try {
+              const response = await fetch(`/api/disease-data?username=${currentUsername}`);
+              const data = await response.json();
+              
+              if (data.error) {
+                  console.error("Error loading disease data:", data.error);
+                  return;
+              }
+              
+              allHistoryData = data.history || [];
+              originalHistoryData = [...allHistoryData];
+              
+              // Update statistics cards
+              updateStatistics(data);
+              
+              // Update chart and table
+              updateBarChart(data.diseaseTypes, data.scanCounts);
+              updateHistoryTable();
+          } catch (error) {
+              console.error("Failed to load disease data:", error);
+          }
+      }
+      
+      // Update statistics cards - CORRECTED
+      function updateStatistics(data) {
+        // Total uploaded images = all scanned and uploaded images
+        document.getElementById('totalImages').textContent = allHistoryData.length;
+        
+        // Overall disease counts = all scanned diseases except Unknown
+        const totalDiseases = allHistoryData.filter(item => {
+          const diseaseType = item.diseaseType.toLowerCase();
+          return diseaseType !== 'unknown';
+        }).length;
+        
+        document.getElementById('totalDiseases').textContent = totalDiseases;
+        
+        // Most predicted disease = disease with highest count from all scans
+        const diseaseCount = {};
+        allHistoryData.forEach(item => {
+          diseaseCount[item.diseaseType] = (diseaseCount[item.diseaseType] || 0) + 1;
+        });
+        
+        let mostCommon = '-';
+        let maxCount = 0;
+        
+        for (const [disease, count] of Object.entries(diseaseCount)) {
+          if (count > maxCount) {
+            mostCommon = disease;
+            maxCount = count;
+          }
+        }
+        
+        document.getElementById('mostCommonDisease').textContent = mostCommon;
+      }
+      
+      // Create or update the bar chart
+      function updateBarChart(labels, data) {
+        const allowedDiseases = [
+            'Anthracnose',
+            'Dry Rot',
+            'Gummosis',
+            'Raw',
+            'Over Ripe',
+            'Half Ripe',
+            'Healthy Ripe'
+        ];
+    
+        const filteredLabels = [];
+        const filteredData = [];
+        const filteredColors = [];
+        
+        const diseaseColors = {
+            'Anthracnose': 'rgba(255, 99, 132, 0.7)',
+            'Dry Rot': 'rgba(54, 162, 235, 0.7)',
+            'Gummosis': 'rgba(255, 206, 86, 0.7)',
+            'Raw': 'rgba(75, 192, 192, 0.7)',
+            'Over Ripe': 'rgba(153, 102, 255, 0.7)',
+            'Half Ripe': 'rgba(255, 159, 64, 0.7)',
+            'Healthy Ripe': 'rgba(201, 203, 207, 0.7)'
+        };
+    
+        labels.forEach((label, index) => {
+            let normalizedLabel = label;
+            const reverseMappings = {
+                'Dry': 'Dry Rot',
+                'Over ripe': 'Over Ripe',
+                'Over-ripe': 'Over Ripe',
+                'Half ripe': 'Half Ripe',
+                'Half-ripe': 'Half Ripe',
+                'Healthy': 'Healthy Ripe',
+                'Healthy ripe': 'Healthy Ripe'
+            };
+            
+            if (reverseMappings[label]) {
+                normalizedLabel = reverseMappings[label];
+            }
+    
+            // FIXED: Exclude Unknown from chart
+            if (allowedDiseases.includes(normalizedLabel) && normalizedLabel.toLowerCase() !== 'unknown') {
+                filteredLabels.push(normalizedLabel);
+                filteredData.push(data[index]);
+                filteredColors.push(diseaseColors[normalizedLabel]);
+            }
+        });
+    
+        if (diseaseChart) {
+            diseaseChart.data.labels = filteredLabels;
+            diseaseChart.data.datasets[0].data = filteredData;
+            diseaseChart.data.datasets[0].backgroundColor = filteredColors;
+            diseaseChart.update();
+            return;
+        }
+    
+        diseaseChart = new Chart(diseaseChartCtx, {
+            type: 'bar',
+            data: {
+                labels: filteredLabels,
+                datasets: [{
+                    label: 'Number of Detections',
+                    data: filteredData,
+                    backgroundColor: filteredColors,
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Mangosteen Disease Detection Distribution',
+                        font: { size: 16 }
+                    },
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Detections' }
+                    }
+                },
+                animation: {
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+      
+      // Update history table with scrolling (removed pagination)
+      function updateHistoryTable() {
+          const tbody = historyTable.querySelector('tbody');
+          const noDataMsg = document.getElementById('noHistoryData');
+          const recordCount = document.getElementById('recordCount');
+          
+          tbody.innerHTML = '';
+          
+          if (allHistoryData.length === 0) {
+              noDataMsg.style.display = 'flex';
+              recordCount.textContent = '0 records';
+              return;
+          }
+          
+          noDataMsg.style.display = 'none';
+          recordCount.textContent = `${allHistoryData.length} record${allHistoryData.length !== 1 ? 's' : ''}`;
+          
+          // Display all data without pagination (simplified)
+          allHistoryData.forEach((item, index) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                  <td>${new Date(item.dateTime).toLocaleString()}</td>
+                  <td>${item.filename}</td>
+                  <td><span class="prediction-badge">${item.diseaseType}</span></td>
+                  <td>${item.confidence}%</td>
+              `;
+              tbody.appendChild(row);
+          });
+      }
+      
+      // Filter history table by disease type
+      function filterTableByDisease() {
+        const diseaseType = document.getElementById('diseaseFilter').value;
+        
+        if (diseaseType === 'all') {
+            allHistoryData = [...originalHistoryData];
+        } else {
+            const filteredData = originalHistoryData.filter(item => {
+                const storedType = item.diseaseType;
+                const typeMappings = {
+                    'Dry Rot': ['Dry Rot', 'Dry'],
+                    'Over Ripe': ['Over Ripe', 'Over ripe', 'Over-ripe'],
+                    'Half Ripe': ['Half Ripe', 'Half ripe', 'Half-ripe'],
+                    'Healthy Ripe': ['Healthy Ripe', 'Healthy ripe', 'Healthy']
+                };
+                
+                if (typeMappings[diseaseType]) {
+                    return typeMappings[diseaseType].includes(storedType);
+                }
+                
+                return storedType === diseaseType;
+            });
+            
+            allHistoryData = filteredData;
+        }
+        
+        applyDateFilter();
+        updateChartFromFilteredData();
+        updateHistoryTable();
+      }
+      
+      // FIXED: Apply date filter function
+      function applyDateFilter() {
+        const startDateStr = document.getElementById('startDateFilter').value;
+        const endDateStr = document.getElementById('endDateFilter').value;
+        
+        if (!startDateStr && !endDateStr) return;
+        
+        // Apply disease filter first if selected
+        const diseaseType = document.getElementById('diseaseFilter').value;
+        let filteredData = [...originalHistoryData];
+        
+        if (diseaseType !== 'all') {
+            filteredData = filteredData.filter(item => {
+                const storedType = item.diseaseType;
+                const typeMappings = {
+                    'Dry Rot': ['Dry Rot', 'Dry'],
+                    'Over Ripe': ['Over Ripe', 'Over ripe', 'Over-ripe'],
+                    'Half Ripe': ['Half Ripe', 'Half ripe', 'Half-ripe'],
+                    'Healthy Ripe': ['Healthy Ripe', 'Healthy ripe', 'Healthy']
+                };
+                
+                if (typeMappings[diseaseType]) {
+                    return typeMappings[diseaseType].includes(storedType);
+                }
+                
+                return storedType === diseaseType;
+            });
+        }
+        
+        // Then filter by date range if both dates are provided
+        if (startDateStr && endDateStr) {
+            const startDate = new Date(startDateStr);
+            startDate.setHours(0, 0, 0, 0);
+            
+            const endDate = new Date(endDateStr);
+            endDate.setHours(23, 59, 59, 999);
+            
+            filteredData = filteredData.filter(item => {
+                const itemDate = new Date(item.dateTime);
+                return itemDate >= startDate && itemDate <= endDate;
+            });
+        }
+        
+        allHistoryData = filteredData;
+        updateChartFromFilteredData();
+        updateHistoryTable();
+      }
+      
+      // Reset date filters
+      function resetDateFilter() {
+        document.getElementById('startDateFilter').value = '';
+        document.getElementById('endDateFilter').value = '';
+        
+        const diseaseType = document.getElementById('diseaseFilter').value;
+        
+        if (diseaseType === 'all') {
+            allHistoryData = [...originalHistoryData];
+        } else {
+            filterTableByDisease();
+            return;
+        }
+        
+        updateChartFromFilteredData();
+        updateHistoryTable();
+    }
+      
+      // Update chart based on current filtered data
+      function updateChartFromFilteredData() {
+        const diseaseCount = {};
+        allHistoryData.forEach(item => {
+            let displayType = item.diseaseType;
+            
+            const reverseMappings = {
+                'Dry': 'Dry Rot',
+                'Over ripe': 'Over Ripe',
+                'Over-ripe': 'Over Ripe',
+                'Half ripe': 'Half Ripe',
+                'Half-ripe': 'Half Ripe',
+                'Healthy': 'Healthy Ripe',
+                'Healthy ripe': 'Healthy Ripe'
+            };
+            
+            if (reverseMappings[item.diseaseType]) {
+                displayType = reverseMappings[item.diseaseType];
+            }
+            
+            diseaseCount[displayType] = (diseaseCount[displayType] || 0) + 1;
+        });
+        
+        const filteredTypes = Object.keys(diseaseCount);
+        const filteredCounts = filteredTypes.map(type => diseaseCount[type]);
+        
+        updateBarChart(filteredTypes, filteredCounts);
+      }
+      
+      // Set up event listeners
+      function setupEventListeners() {
+          // Disease filter dropdown
+          document.getElementById('diseaseFilter').addEventListener('change', filterTableByDisease);
+          
+          // Date filter buttons
+          document.getElementById('applyDateFilterBtn').addEventListener('click', applyDateFilter);
+          document.getElementById('resetDateFilterBtn').addEventListener('click', resetDateFilter);
+          
+          // Print button
+          document.getElementById('printReportBtn').addEventListener('click', generatePrintReport);
+          
+          // Download button
+          document.getElementById('downloadReportBtn').addEventListener('click', downloadCSVReport);
+      }
+      
+      // Function to auto-refresh data every 5 minutes
+      function startAutoRefresh() {
+          setInterval(async () => {
+              await loadDiseaseData();
+          }, 300000);
+      }
+      
+      // Generate print report
+      function generatePrintReport() {
+          const diseaseFilter = document.getElementById('diseaseFilter').value;
+          const startDate = document.getElementById('startDateFilter').value;
+          const endDate = document.getElementById('endDateFilter').value;
+          
+          const printData = allHistoryData;
+          
+          const printWindow = window.open('', '_blank');
+          printWindow.document.write(`
+              <html>
+              <head>
+                  <title>Disease Detection Report</title>
+                  <style>
+                      body { font-family: Arial, sans-serif; margin: 20px; }
+                      h1 { color: #2c3e50; }
+                      .report-info { margin-bottom: 20px; }
+                      table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+                      th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                      th { background-color: #f2f2f2; }
+                      tr:nth-child(even) { background-color: #f9f9f9; }
+                      @media print {
+                          body { margin: 0; }
+                          .no-print { display: none; }
+                      }
+                  </style>
+              </head>
+              <body>
+                  <h1>Disease Detection Report</h1>
+                  <div class="report-info">
+                      <p><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
+                      <p><strong>Date Range:</strong> ${startDate && endDate 
+                          ? `${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}` 
+                          : 'All dates'}</p>
+                      <p><strong>Disease Type:</strong> ${diseaseFilter !== 'all' ? diseaseFilter : 'All types'}</p>
+                  </div>
+                  <table>
+                      <thead>
+                          <tr>
+                              <th>Date-Time Scanned</th>
+                              <th>File Name</th>
+                              <th>Prediction</th>
+                              <th>Confidence (%)</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          ${printData.length > 0 ? printData.map(item => `
+                              <tr>
+                                  <td>${new Date(item.dateTime).toLocaleString()}</td>
+                                  <td>${item.filename}</td>
+                                  <td>${item.diseaseType}</td>
+                                  <td>${item.confidence}%</td>
+                              </tr>
+                          `).join('') : `
+                              <tr>
+                                  <td colspan="4" style="text-align: center;">No data available for the selected filters</td>
+                              </tr>
+                          `}
+                      </tbody>
+                  </table>
+                  <br>
+                  <button class="no-print" onclick="window.print()">Print</button>
+                  <button class="no-print" onclick="window.close()">Close</button>
+              </body>
+              </html>
+          `);
+          printWindow.document.close();
+          
+          printWindow.onload = function() {
+              printWindow.print();
+          };
+      }
+      
+      // NEW: Download CSV report function
+      function downloadCSVReport() {
+          const diseaseFilter = document.getElementById('diseaseFilter').value;
+          const startDate = document.getElementById('startDateFilter').value;
+          const endDate = document.getElementById('endDateFilter').value;
+          
+          // Prepare CSV data
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "Date-Time Scanned,File Name,Prediction,Confidence (%)\n";
+          
+          allHistoryData.forEach(item => {
+              const row = [
+                  new Date(item.dateTime).toLocaleString(),
+                  item.filename,
+                  item.diseaseType,
+                  item.confidence + '%'
+              ].map(field => `"${field}"`).join(',');
+              csvContent += row + "\n";
+          });
+          
+          // Create and trigger download
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          
+          // Generate filename with current date and filters
+          let filename = "mangosteen_detection_report_" + new Date().toISOString().split('T')[0];
+          if (diseaseFilter !== 'all') {
+              filename += "_" + diseaseFilter.toLowerCase().replace(/\s+/g, '_');
+          }
+          if (startDate && endDate) {
+              filename += "_" + startDate + "_to_" + endDate;
+          }
+          filename += ".csv";
+          
+          link.setAttribute("download", filename);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+      }
+  });
+</script>
+
+<style>
+/* -------------------------- DASHBOARD SECTION 2 -------------------------- */
+
+/* Section 2: Statistics and Dashboard */
+.dashboard-stats {
+    padding: 35px 0;
+    background-color: #fcfcfc;
+}
+  
+.section-title {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #2c3e50;
+    font-size: 40px;
+    font-weight: 700;
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+    font-size: 28px;
+    color: white;
+}
+
+.total-images .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.disease-count .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.common-disease .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-content h3 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-content p {
+    margin: 5px 0 0;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+/* View History Button */
+.view-history-btn {
+    background: linear-gradient(135deg, #6a28a7 0%, #512188 100%);
+    border: none;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(106, 40, 167, 0.3);
+}
+
+.view-history-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(106, 40, 167, 0.4);
+    background: linear-gradient(135deg, #512188 0%, #6a28a7 100%);
+}
+
+/* Graph Container */
+.graph-container {
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    margin-bottom: 30px;
+    height: 400px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.graph-container:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Simplified Modern Purple Modal Styles */
+.enhanced-modal {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(106, 40, 167, 0.2);
+    overflow: hidden;
+}
+
+.enhanced-header {
+    background: linear-gradient(135deg, #5a189a 0%, #9d4edd 100%);
+    color: white;
+    border-bottom: none;
+    padding: 24px 30px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-icon {
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px;
+    border-radius: 50%;
+}
+
+.modal-title {
+    font-weight: 600;
+    font-size: 24px;
+    margin: 0;
+}
+
+.modal-subtitle {
+    margin: 4px 0 0;
+    opacity: 0.85;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.enhanced-close {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 16px;
+    padding: 8px;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.enhanced-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.enhanced-body {
+    padding: 30px;
+    background: #fafbfc;
+}
+
+/* Simplified Filter Section */
+.filter-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #e9ecef;
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    color: #6a28a7;
+}
+
+.filter-header i {
+    font-size: 18px;
+}
+
+.filter-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 20px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.filter-group label i {
+    color: #6a28a7;
+    font-size: 14px;
+}
+
+.form-select, .form-control {
+    padding: 10px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #fff;
+    transition: border-color 0.2s ease;
+    font-size: 14px;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #6a28a7;
+    box-shadow: 0 0 0 2px rgba(106, 40, 167, 0.1);
+    outline: none;
+}
+
+.date-range-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-separator {
+    font-weight: 400;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-filter {
+    background: #6a28a7;
+    color: white;
+}
+
+.btn-filter:hover {
+    background: #5a2391;
+}
+
+.btn-reset {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-reset:hover {
+    background: #5a6268;
+}
+
+.export-section {
+    display: flex;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn-print {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-print:hover {
+    background: #138496;
+}
+
+.btn-download {
+    background: #fd7e14;
+    color: white;
+}
+
+.btn-download:hover {
+    background: #e55a00;
+}
+
+/* Simplified Table Section */
+.table-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e9ecef;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.table-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.table-header h4 i {
+    color: #6a28a7;
+    font-size: 18px;
+}
+
+.record-count {
+    background: #6a28a7;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Simplified Scrollable Table */
+.scrollable-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.scrollable-table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable-table-container::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.scrollable-table-container::-webkit-scrollbar-thumb {
+    background: #6a28a7;
+    border-radius: 3px;
+}
+
+.enhanced-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.enhanced-table th {
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 500;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.enhanced-table th i {
+    margin-right: 6px;
+    color: #6a28a7;
+    font-size: 14px;
+}
+
+.enhanced-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.enhanced-table tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+.enhanced-table tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+/* Simplified Table Cell Styling */
+.prediction-badge {
+    background: linear-gradient(135deg, #6a28a7 0%, #8b5cf6 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* Simplified No Data Display */
+.no-data-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.no-data-content {
+    max-width: 400px;
+}
+
+.no-data-icon {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.no-data-display h4 {
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.no-data-display p {
+    color: #6b7280;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.btn-scan {
+    background: #6a28a7;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.btn-scan:hover {
+    background: #5a2391;
+    color: white;
+    text-decoration: none;
+}
+
+/* Simplified Footer */
+.enhanced-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.footer-info i {
+    color: #6a28a7;
+}
+
+.btn-close-modal {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-close-modal:hover {
+    background: #5a6268;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .graph-container {
+        height: 350px;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .export-section {
+        flex-wrap: wrap;
+    }
+    
+    .table-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .enhanced-body {
+        padding: 20px;
+    }
+    
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .stat-icon {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 32px;
+    }
+    
+    .stat-content h3 {
+        font-size: 28px;
+    }
+    
+    .enhanced-header {
+        padding: 20px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .modal-title {
+        font-size: 20px;
+    }
+    
+    .filter-section,
+    .table-section {
+        padding: 20px;
+    }
+    
+    .enhanced-table th,
+    .enhanced-table td {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+    
+    .view-history-btn {
+        padding: 12px 25px;
+        font-size: 16px;
+    }
+    
+    .scrollable-table-container {
+        max-height: 300px;
+    }
+    
+    .export-section {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .stat-content h3 {
+        font-size: 24px;
+    }
+    
+    .graph-container {
+        height: 300px;
+        padding: 15px;
+    }
+    
+    .enhanced-body {
+        padding: 15px;
+    }
+    
+    .filter-section,
+    .table-section {
+        padding: 15px;
+    }
+    
+    .enhanced-table th,
+    .enhanced-table td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+    
+    .no-data-display {
+        padding: 40px 15px;
+    }
+    
+    .no-data-icon {
+        font-size: 48px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,529 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    SORT
+{% endblock %}
+
+{% block content %}
+<!-- Main Container - Non-scrollable -->
+<div class="scan-page-container">
+    <!-- Scan Container - Wider version -->
+    <div class="scan-container">
+      <h2>Mangosteen Quality Sorter</h2>
+      <p class="scan-description">Real-Time Fruit Sorting Machine</p>
+        
+      <div class="row justify-content-center">
+          <div class="col-lg-10">
+              <!-- 1. Sorting Controls -->
+              <div class="card shadow-sm mb-4">
+                <div class="card-header text-black">
+                      <h4 class="mb-0">Sorting Controls</h4>
+                  </div>
+                  <div class="card-body">
+                      <div class="d-flex justify-content-center gap-3">
+                          <button id="start-btn" class="btn btn-primary btn-lg">
+                              <i class="fas fa-play me-2"></i>Start
+                          </button>
+                          <button id="stop-btn" class="btn btn-warning btn-lg" disabled>
+                              <i class="fas fa-stop me-2"></i>Stop
+                          </button>
+                          <button id="reset-btn" class="btn btn-danger btn-lg" disabled>
+                              <i class="fas fa-redo me-2"></i>Reset
+                          </button>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- 2. Real-time Camera Container -->
+              <div class="card shadow-sm mb-4">
+                  <div class="card-header text-black">
+                      <h4 class="mb-0">Camera Feed</h4>
+                  </div>
+                  <div class="card-body">
+                      <div class="camera-feed-container">
+                          <div class="camera-placeholder">
+                              <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                              <p class="text-muted">Waiting for camera connection...</p>
+                              <div class="camera-status">
+                                  <span class="status-indicator offline"></span>
+                                  <span class="status-text">Camera offline</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- 3. Current Status -->
+              <div class="card shadow-sm mb-4">
+                  <div class="card-header text-black">
+                      <h4 class="mb-0">Current Status</h4>
+                  </div>
+                  <div class="card-body">
+                      <div class="row">
+                          <div class="col-md-6">
+                              <div class="row text-center">
+                                  <div class="col-md-6 mb-3">
+                                      <div class="border rounded p-3">
+                                          <div id="good-count" class="display-4 fw-bold text-success">0</div>
+                                          <small>GOOD</small>
+                                      </div>
+                                  </div>
+                                  <div class="col-md-6 mb-3">
+                                      <div class="border rounded p-3">
+                                          <div id="rejected-count" class="display-4 fw-bold text-danger">0</div>
+                                          <small>REJECTED</small>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <div class="row mt-4">
+                                  <div class="col-12">
+                                      <div class="progress" style="height: 25px;">
+                                          <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                                      </div>
+                                      <small class="text-muted">Quality Acceptance Rate</small>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="chart-container" style="position: relative; height:250px;">
+                                  <canvas id="sorting-pie-chart"></canvas>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- 4. Graph Section -->
+              <div class="card shadow-sm mb-4">
+                  <div class="card-header text-black">
+                      <h4 class="mb-0">Performance Analytics</h4>
+                  </div>
+                  <div class="card-body">
+                      <div class="graph-container" style="position: relative; height:300px;">
+                          <canvas id="performance-chart"></canvas>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    </div>
+</div>
+
+<style>
+    .scan-page-container {
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Wider container */
+    .scan-container {
+        max-width: 1700px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .scan-container h2 {
+        color: #512188;
+        margin-bottom: 0.5rem;
+        font-size: 2.2rem;
+    }
+    
+    .scan-description {
+        color: #666;
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.7rem 2rem;
+        font-size: 1.2rem;
+        min-width: 120px;
+    }
+    
+    .chart-container, .graph-container {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    /* Camera Feed Styling */
+    .camera-feed-container {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .camera-placeholder {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .camera-status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 1rem;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .status-indicator.online {
+        background-color: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-indicator.offline {
+        background-color: #dc3545;
+    }
+    
+    .status-text {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    /* Animation keyframes */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+
+<!-- Chart.js for charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize empty counts - ONLY GOOD and REJECTED
+        const counts = {
+            good: 0,
+            rejected: 0
+        };
+        
+        // Get DOM elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        let sortingActive = false;
+        let sortingInterval = null;
+        let lastUpdateTime = Date.now();
+        
+        // Initialize pie chart - ONLY GOOD and REJECTED
+        const pieCtx = document.getElementById('sorting-pie-chart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['GOOD', 'REJECTED'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: [
+                        '#28a745', // green - GOOD
+                        '#dc3545'  // red - REJECTED
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Initialize performance chart
+        const performanceCtx = document.getElementById('performance-chart').getContext('2d');
+        const performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 10}, (_, i) => i + 1),
+                datasets: [{
+                    label: 'GOOD Fruits per Minute',
+                    data: Array(10).fill(0),
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time Intervals (seconds)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Start button handler - Connect to real device
+        startBtn.addEventListener('click', function() {
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            resetBtn.disabled = true;
+            sortingActive = true;
+            
+            // Update camera status
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            const cameraPlaceholder = document.querySelector('.camera-placeholder');
+            
+            statusIndicator.className = 'status-indicator online';
+            statusText.textContent = 'Camera online - Streaming';
+            cameraPlaceholder.innerHTML = `
+                <div class="camera-active">
+                    <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+                    <p class="text-success">Camera connected successfully</p>
+                    <div class="camera-status">
+                        <span class="status-indicator online"></span>
+                        <span class="status-text">Streaming live feed</span>
+                    </div>
+                </div>
+            `;
+            
+            // Initialize device connection
+            initializeDeviceConnection();
+            
+            console.log("Sorting started - waiting for device connection");
+        });
+        
+        // Stop button handler - Disconnect from device
+        stopBtn.addEventListener('click', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = false;
+            sortingActive = false;
+            
+            // Disconnect from device
+            disconnectFromDevice();
+            
+            console.log("Sorting stopped - device disconnected");
+        });
+        
+        // Reset button handler
+        resetBtn.addEventListener('click', function() {
+            // Reset all counters
+            document.getElementById('good-count').textContent = '0';
+            document.getElementById('rejected-count').textContent = '0';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-bar').textContent = '0%';
+            
+            // Reset charts
+            pieChart.data.datasets[0].data = [0, 0];
+            pieChart.update();
+            
+            performanceChart.data.datasets[0].data = Array(10).fill(0);
+            performanceChart.update();
+            
+            // Reset camera status
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            const cameraPlaceholder = document.querySelector('.camera-placeholder');
+            
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'Camera offline';
+            cameraPlaceholder.innerHTML = `
+                <i class="fas fa-camera fa-4x text-muted mb-3"></i>
+                <p class="text-muted">Waiting for camera connection...</p>
+                <div class="camera-status">
+                    <span class="status-indicator offline"></span>
+                    <span class="status-text">Camera offline</span>
+                </div>
+            `;
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = true;
+            sortingActive = false;
+            
+            console.log("Counters reset");
+        });
+        
+        // Initialize connection to sorting device
+        function initializeDeviceConnection() {
+            // Replace this with your actual device connection logic
+            console.log("Initializing connection to sorting device...");
+            
+            // Example: WebSocket connection to device
+            /*
+            const ws = new WebSocket('ws://your-device-ip:port');
+            ws.onopen = function() {
+                console.log("Connected to sorting device");
+            };
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'fruit_detected') {
+                    updateSortingCount(data.quality); // 'good' or 'rejected'
+                }
+            };
+            ws.onerror = function(error) {
+                console.error("Device connection error:", error);
+            };
+            */
+            
+            // For now, we'll simulate device connection
+            setTimeout(() => {
+                if (sortingActive) {
+                    console.log("Device connected successfully");
+                    // Start listening for fruit detection events
+                    startFruitDetection();
+                }
+            }, 1000);
+        }
+        
+        // Disconnect from device
+        function disconnectFromDevice() {
+            // Replace this with your actual device disconnection logic
+            console.log("Disconnecting from sorting device...");
+            
+            // Example: Close WebSocket connection
+            /*
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+            */
+        }
+        
+        // Start listening for fruit detection (replace with actual device communication)
+        function startFruitDetection() {
+            // This function should be replaced with actual device event listeners
+            console.log("Listening for fruit detection events...");
+            
+            // Simulated device communication (remove this in production)
+            sortingInterval = setInterval(() => {
+                if (sortingActive) {
+                    // Simulate device sending fruit detection data
+                    // In real implementation, this would come from your device
+                    const randomQuality = Math.random() > 0.3 ? 'good' : 'rejected';
+                    
+                    // Create mock device data
+                    const deviceData = {
+                        type: 'fruit_detected',
+                        quality: randomQuality,
+                        timestamp: Date.now(),
+                        confidence: Math.random().toFixed(2)
+                    };
+                    
+                    // Process the device data
+                    processDeviceData(deviceData);
+                }
+            }, 1500);
+        }
+        
+        // Process data from sorting device
+        function processDeviceData(data) {
+            if (data.type === 'fruit_detected') {
+                updateSortingCount(data.quality, data.confidence);
+            }
+        }
+        
+        // Update sorting counts based on device input
+        function updateSortingCount(quality, confidence) {
+            if (!sortingActive) return;
+            
+            // Validate input
+            if (quality !== 'good' && quality !== 'rejected') {
+                console.error("Invalid quality value:", quality);
+                return;
+            }
+            
+            // Update the appropriate counter
+            const counter = document.getElementById(`${quality}-count`);
+            const currentCount = parseInt(counter.textContent);
+            counter.textContent = currentCount + 1;
+            
+            // Add visual feedback
+            counter.classList.add('count-update');
+            setTimeout(() => counter.classList.remove('count-update'), 500);
+            
+            // Update pie chart
+            pieChart.data.datasets[0].data = [
+                parseInt(document.getElementById('good-count').textContent),
+                parseInt(document.getElementById('rejected-count').textContent)
+            ];
+            pieChart.update();
+            
+            // Update progress bar (percentage of good fruits)
+            const total = pieChart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+            if (total > 0) {
+                const goodPercent = Math.round((pieChart.data.datasets[0].data[0] / total) * 100);
+                const progressBar = document.getElementById('progress-bar');
+                progressBar.style.width = `${goodPercent}%`;
+                progressBar.textContent = `${goodPercent}%`;
+                
+                // Change progress bar color based on percentage
+                if (goodPercent >= 80) {
+                    progressBar.className = 'progress-bar bg-success';
+                } else if (goodPercent >= 60) {
+                    progressBar.className = 'progress-bar bg-warning';
+                } else {
+                    progressBar.className = 'progress-bar bg-danger';
+                }
+            }
+            
+            // Update performance chart (every 10 seconds)
+            const now = Date.now();
+            if (now - lastUpdateTime >= 10000) {
+                lastUpdateTime = now;
+                const currentData = performanceChart.data.datasets[0].data;
+                currentData.push(pieChart.data.datasets[0].data[0]);
+                if (currentData.length > 10) {
+                    currentData.shift();
+                }
+                performanceChart.update();
+            }
+            
+            // Log the detection
+            console.log(`Fruit detected: ${quality.toUpperCase()} (Confidence: ${confidence})`);
+        }
+        
+        // Count update animation
+        const style = document.createElement('style');
+        style.textContent = `
+            .count-update {
+                animation: countPulse 0.5s ease-in-out;
+            }
+            @keyframes countPulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}
