@@ -1,0 +1,4 @@
+import os
+import secrets
+
+SECRET_KEY = "499ea5cd9d6bcd9b340e2d7cc88a592adb4716de5c4e8955ddb4dd1cd2a937c0"

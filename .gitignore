@@ -1,0 +1,23 @@
+# --- Python & Environment ---
+__pycache__/
+mangosqueen_venv/
+instance/
+.env
+
+# --- Security Keys (DO NOT UPLOAD THESE) ---
+client_secrets.json
+mangosqueen-afce6-firebase-adminsdk-fbsvc-fd221a8106.json
+mangosqueen-firebase.json
+
+# --- Large Model Files (Likely too big for GitHub) ---
+*.keras
+*.tflite
+
+# --- Misc ---
+debug_images/
+
+# Ignore random uploads, images, and models inside static/
+static/assets/
+static/models/
+static/uploads/
+static/images/
