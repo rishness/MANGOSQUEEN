@@ -1,0 +1,943 @@
+{% extends "base.html" %}
+
+{% block title %}
+MANGOSQUEEN - Results
+{% endblock %}
+
+{% block content %}
+
+<!-- Critical CSS -->
+<style>
+  /* Page load transition */
+  body {
+    animation: pageLoadFade 0.3s ease-in;
+  }
+
+  @keyframes pageLoadFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Main Container */
+  .results-page-container {
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    padding: 0 1rem;
+  }
+
+  /* Results Container */
+  .results-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Title with Badge */
+  .results-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+
+  .results-badge {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50px;
+    font-size: clamp(0.75rem, 2vw, 0.9rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .results-title {
+    color: #1a202c;
+    font-size: clamp(1.8rem, 4vw, 2.2rem);
+    font-weight: 800;
+    margin: 0;
+  }
+
+  /* Result Content Layout - Side by Side */
+  .result-content {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 2.5rem;
+    margin-bottom: 2.5rem;
+    align-items: start;
+  }
+
+  /* Image Section - Compact Card */
+  .image-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 20px;
+  }
+
+  .section-title {
+    color: #1a202c;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    margin-bottom: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .section-title i {
+    color: #667eea;
+    font-size: 1.1rem;
+  }
+
+  .result-image-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background-color: #ffffff;
+    border: 3px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .result-image-container:hover {
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    border-color: #667eea;
+  }
+
+  .result-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* Info Section - Modern Cards */
+  .info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 2px solid #f1f3f5;
+    transition: all 0.3s ease;
+  }
+
+  .info-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+  }
+
+  .info-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .icon-disease {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .icon-confidence {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+  }
+
+  .icon-symptoms {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+  }
+
+  .icon-error {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+  }
+
+  .info-card-title {
+    font-weight: 700;
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: #1a202c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .info-value {
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    color: #4a5568;
+    line-height: 1.7;
+  }
+
+  .highlight {
+    font-weight: 800;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+
+  /* Confidence Bar */
+  .confidence-bar {
+    height: 12px;
+    background-color: #e2e8f0;
+    border-radius: 10px;
+    margin-top: 1rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    position: relative;
+  }
+
+  .confidence-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .confidence-percentage {
+    display: block;
+    text-align: right;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    color: #667eea;
+    font-weight: 700;
+    margin-top: 0.5rem;
+  }
+
+  /* Lists with Icons */
+  .info-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .info-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    color: #2d3748;
+    line-height: 1.6;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+  }
+
+  .info-list li i {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    font-size: 0.9rem;
+  }
+
+  .symptoms-list li i {
+    color: #f56565;
+  }
+
+  .prevention-list li i,
+  .recommendations-list li i {
+    color: #48bb78;
+  }
+
+  /* Additional Info Section - Glassmorphism */
+  .additional-info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 2px solid rgba(102, 126, 234, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+  }
+
+  .additional-info-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .additional-info-title {
+    color: #1a202c;
+    font-size: clamp(1.3rem, 3vw, 1.6rem);
+    margin: 0;
+    font-weight: 800;
+  }
+
+  .disease-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .disease-name-badge {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  }
+
+  .disease-description {
+    color: #4a5568;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+    font-size: clamp(0.95rem, 2vw, 1.05rem);
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border-left: 4px solid #667eea;
+  }
+
+  .info-section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0 1.5rem;
+  }
+
+  .info-section-divider::before,
+  .info-section-divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  }
+
+  .info-subtitle {
+    color: #667eea;
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .info-subtitle i {
+    font-size: 1.1rem;
+  }
+
+  /* Action Buttons - Modern Floating */
+  .result-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .action-button {
+    padding: 1rem 2.5rem;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    transition: all 0.3s ease;
+    font-weight: 700;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .action-button:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  }
+
+  .action-button i {
+    font-size: 1.2rem;
+  }
+
+  .back-button {
+    border-color: #6c757d;
+    color: #6c757d;
+    box-shadow: 0 4px 16px rgba(108, 117, 125, 0.2);
+  }
+
+  .back-button:hover {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    border-color: #6c757d;
+    box-shadow: 0 8px 24px rgba(108, 117, 125, 0.4);
+  }
+
+  /* Responsive Design */
+
+  /* Mobile Portrait (320px - 480px) */
+  @media (max-width: 480px) {
+    .results-page-container {
+      margin-top: 0.5rem;
+      padding: 0 0.5rem;
+    }
+
+    .results-container {
+      padding: 1.5rem 1rem;
+      border-radius: 16px;
+    }
+
+    .results-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .results-badge {
+      font-size: 0.7rem;
+      padding: 0.4rem 1rem;
+    }
+
+    .results-title {
+      font-size: 1.5rem;
+    }
+
+    .result-content {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .image-section {
+      padding: 1rem;
+      position: static;
+    }
+
+    .section-title {
+      font-size: 1rem;
+    }
+
+    .info-card {
+      padding: 1.2rem;
+    }
+
+    .info-icon {
+      width: 35px;
+      height: 35px;
+      font-size: 1rem;
+    }
+
+    .info-card-title {
+      font-size: 0.9rem;
+    }
+
+    .highlight {
+      font-size: 1.3rem;
+    }
+
+    .info-list {
+      gap: 0.6rem;
+    }
+
+    .info-list li {
+      font-size: 0.85rem;
+    }
+
+    .additional-info {
+      padding: 1.5rem 1rem;
+    }
+
+    .additional-info-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .info-badge {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+
+    .additional-info-title {
+      font-size: 1.2rem;
+    }
+
+    .disease-card {
+      padding: 1.5rem 1rem;
+    }
+
+    .disease-name-badge {
+      font-size: 1rem;
+      padding: 0.6rem 1.2rem;
+    }
+
+    .disease-description {
+      font-size: 0.9rem;
+      padding: 1rem;
+    }
+
+    .info-subtitle {
+      font-size: 0.95rem;
+    }
+
+    .result-actions {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .action-button {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+    }
+  }
+
+  /* Mobile Landscape / Small Tablet (481px - 768px) */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .results-container {
+      padding: 1.8rem;
+    }
+
+    .result-content {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .image-section {
+      position: static;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .additional-info {
+      padding: 1.8rem;
+    }
+
+    .action-button {
+      padding: 0.9rem 2rem;
+    }
+  }
+
+  /* Tablet Landscape (769px - 1024px) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .result-content {
+      grid-template-columns: 350px 1fr;
+      gap: 2rem;
+    }
+
+    .image-section {
+      position: sticky;
+    }
+  }
+
+  /* Desktop (1025px - 1440px) */
+  @media (min-width: 1025px) and (max-width: 1440px) {
+    .result-content {
+      grid-template-columns: 380px 1fr;
+    }
+  }
+
+  /* Large Desktop (1441px+) */
+  @media (min-width: 1441px) {
+    .results-container {
+      max-width: 1300px;
+    }
+
+    .result-content {
+      grid-template-columns: 420px 1fr;
+    }
+  }
+
+  /* Orientation-based adjustments */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .results-container {
+      padding: 1rem;
+    }
+
+    .result-content {
+      gap: 1.5rem;
+    }
+
+    .image-section {
+      position: static;
+    }
+  }
+
+  /* High DPI screens */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .result-image-container img {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+
+  /* Print Styles */
+  @media print {
+    .result-actions {
+      display: none;
+    }
+
+    .results-container {
+      box-shadow: none;
+    }
+
+    .image-section {
+      position: static;
+    }
+  }
+</style>
+
+<div class="results-page-container">
+  <div class="results-container">
+    <!-- Header with Badge -->
+    <div class="results-header">
+      <span class="results-badge">
+        <i class="fas fa-microscope"></i> Analysis Complete
+      </span>
+      <h1 class="results-title">Detection Results</h1>
+    </div>
+
+    <div class="result-content">
+      <!-- Image Section - Compact -->
+      <div class="image-section">
+        <h2 class="section-title">
+          <i class="fas fa-image"></i> Image Preview
+        </h2>
+        <div class="result-image-container">
+          <img src="{{ url_for('static', filename=image_path) }}" alt="Mangosteen Image">
+        </div>
+      </div>
+
+      <!-- Info Section - Modern Cards -->
+      <div class="info-section">
+        <!-- Disease Type Card -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-icon icon-disease">
+              <i class="fas fa-viruses"></i>
+            </div>
+            <div class="info-card-title">Detected Condition</div>
+          </div>
+          <div class="highlight">{{ disease_name }}</div>
+        </div>
+
+        <!-- Confidence Score Card -->
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-icon icon-confidence">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="info-card-title">Confidence Score</div>
+          </div>
+          <div class="highlight">{{ "%.2f"|format(confidence_score) }}%</div>
+          <div class="confidence-bar">
+            <div class="confidence-fill" style="width: {{ confidence_score }}%;"></div>
+          </div>
+          <span class="confidence-percentage">Accuracy: {{ "%.2f"|format(confidence_score) }}%</span>
+        </div>
+
+        <!-- Symptoms or Error Card -->
+        {% if disease_name == 'Unknown' %}
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-icon icon-error">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="info-card-title">Detection Error</div>
+          </div>
+          <div class="info-value">
+            <ul class="info-list">
+              <li><i class="fas fa-times-circle"></i> Unable to identify the condition from the provided image</li>
+              <li><i class="fas fa-times-circle"></i> Image quality may be insufficient for accurate analysis</li>
+              <li><i class="fas fa-times-circle"></i> Please ensure proper lighting and focus</li>
+              <li><i class="fas fa-times-circle"></i> Try capturing from a different angle</li>
+              <li><i class="fas fa-times-circle"></i> Remove background clutter for better results</li>
+            </ul>
+          </div>
+        </div>
+        {% else %}
+        <div class="info-card">
+          <div class="info-card-header">
+            <div class="info-icon icon-symptoms">
+              <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="info-card-title">Key Symptoms</div>
+          </div>
+          <div class="info-value">
+            <ul class="info-list symptoms-list">
+              {% if disease_name == 'Anthracnose' %}
+                <li><i class="fas fa-circle"></i> Dark, sunken spots on fruit</li>
+                <li><i class="fas fa-circle"></i> Fruit rot and cracking</li>
+                <li><i class="fas fa-circle"></i> Leaf spots in severe cases</li>
+                <li><i class="fas fa-circle"></i> Premature fruit drop</li>
+                <li><i class="fas fa-circle"></i> Twig dieback in advanced stages</li>
+              {% elif disease_name == 'Dry Rot' %}
+                <li><i class="fas fa-circle"></i> Dry, sunken, wrinkled fruit skin</li>
+                <li><i class="fas fa-circle"></i> Discoloration and lightness in weight</li>
+                <li><i class="fas fa-circle"></i> No fluid or wet rot, only tissue breakdown</li>
+                <li><i class="fas fa-circle"></i> Musty odor in advanced cases</li>
+                <li><i class="fas fa-circle"></i> Powdery fungal growth sometimes visible</li>
+              {% elif disease_name == 'Gummosis' %}
+                <li><i class="fas fa-circle"></i> Sticky resin or gum oozing from bark</li>
+                <li><i class="fas fa-circle"></i> Darkened or cracked bark</li>
+                <li><i class="fas fa-circle"></i> Wilting or yellowing of nearby leaves</li>
+                <li><i class="fas fa-circle"></i> Reduced fruit production</li>
+                <li><i class="fas fa-circle"></i> Branch dieback in severe cases</li>
+              {% elif disease_name == 'Half ripe' %}
+                <li><i class="fas fa-circle"></i> Firm texture with slight give</li>
+                <li><i class="fas fa-circle"></i> Partial color change from green</li>
+                <li><i class="fas fa-circle"></i> Mild aroma development</li>
+                <li><i class="fas fa-circle"></i> Somewhat tart flavor</li>
+                <li><i class="fas fa-circle"></i> Thick rind that's beginning to soften</li>
+              {% elif disease_name == 'Healthy ripe' %}
+                <li><i class="fas fa-circle"></i> Deep purple, uniform color</li>
+                <li><i class="fas fa-circle"></i> Slight softness when gently pressed</li>
+                <li><i class="fas fa-circle"></i> Sweet, fragrant aroma</li>
+                <li><i class="fas fa-circle"></i> Glossy, unblemished skin</li>
+                <li><i class="fas fa-circle"></i> Heavy for its size</li>
+              {% elif disease_name == 'Over ripe' %}
+                <li><i class="fas fa-circle"></i> Very soft, squishy skin</li>
+                <li><i class="fas fa-circle"></i> Possible internal browning</li>
+                <li><i class="fas fa-circle"></i> Loss of flavor or sweetness</li>
+                <li><i class="fas fa-circle"></i> Fermented odor</li>
+                <li><i class="fas fa-circle"></i> Juice leakage</li>
+              {% elif disease_name == 'Raw' %}
+                <li><i class="fas fa-circle"></i> Hard, firm texture</li>
+                <li><i class="fas fa-circle"></i> Greenish color</li>
+                <li><i class="fas fa-circle"></i> No noticeable aroma</li>
+                <li><i class="fas fa-circle"></i> Very tart flavor</li>
+                <li><i class="fas fa-circle"></i> Thick, tough rind</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Additional Information Section -->
+    {% if disease_name != 'Unknown' %}
+    <div class="additional-info">
+      <div class="additional-info-header">
+        <div class="info-badge">
+          <i class="fas fa-info-circle"></i>
+        </div>
+        <h2 class="additional-info-title">Detailed Information</h2>
+      </div>
+
+      <div class="disease-card">
+        {% if disease_name == 'Anthracnose' %}
+          <span class="disease-name-badge">ANTHRACNOSE</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            Anthracnose is a fungal disease that causes dark lesions on fruit surfaces and can lead to rot.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-shield-alt"></i> Prevention and Treatment</h4>
+          </div>
+          <ul class="info-list prevention-list">
+            <li><i class="fas fa-check-circle"></i> Remove and destroy all infected plant material to prevent spread</li>
+            <li><i class="fas fa-check-circle"></i> Apply copper-based fungicides every 7-14 days during wet seasons</li>
+            <li><i class="fas fa-check-circle"></i> Improve air circulation by proper pruning and spacing of trees</li>
+            <li><i class="fas fa-check-circle"></i> Avoid overhead irrigation to reduce leaf wetness periods</li>
+            <li><i class="fas fa-check-circle"></i> Harvest fruits carefully to minimize injuries that allow fungal entry</li>
+          </ul>
+
+        {% elif disease_name == 'Dry Rot' %}
+          <span class="disease-name-badge">DRY ROT</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            Dry rot affects post-harvest fruits, leading to dehydration, hardening, and decay.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-shield-alt"></i> Prevention and Management</h4>
+          </div>
+          <ul class="info-list prevention-list">
+            <li><i class="fas fa-check-circle"></i> Store fruits in cool (10-13°C), dry conditions with good ventilation</li>
+            <li><i class="fas fa-check-circle"></i> Sort and remove damaged fruits before storage</li>
+            <li><i class="fas fa-check-circle"></i> Use clean, sanitized containers to prevent contamination</li>
+            <li><i class="fas fa-check-circle"></i> Apply postharvest fungicide dips if available and approved</li>
+            <li><i class="fas fa-check-circle"></i> Monitor stored fruits regularly and remove any showing early signs</li>
+          </ul>
+
+        {% elif disease_name == 'Gummosis' %}
+          <span class="disease-name-badge">GUMMOSIS</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            Gummosis is a condition where the tree exudes gum due to stress, infections, or physical injury.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-shield-alt"></i> Treatment and Prevention</h4>
+          </div>
+          <ul class="info-list prevention-list">
+            <li><i class="fas fa-check-circle"></i> Carefully scrape away diseased bark until healthy tissue is reached</li>
+            <li><i class="fas fa-check-circle"></i> Disinfect wounds with copper fungicide or approved tree paint</li>
+            <li><i class="fas fa-check-circle"></i> Improve drainage if soil is waterlogged around the tree</li>
+            <li><i class="fas fa-check-circle"></i> Avoid mechanical injuries to trunk and major branches</li>
+            <li><i class="fas fa-check-circle"></i> Maintain proper nutrition and watering to reduce tree stress</li>
+          </ul>
+
+        {% elif disease_name == 'Half ripe' %}
+          <span class="disease-name-badge">HALF RIPE FRUIT</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            This mangosteen is in a mid-ripening stage. Allow it to ripen fully before consumption or sale.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-check-circle"></i> Handling Recommendations</h4>
+          </div>
+          <ul class="info-list recommendations-list">
+            <li><i class="fas fa-check-circle"></i> Store at room temperature (20-25°C) away from direct sunlight</li>
+            <li><i class="fas fa-check-circle"></i> Place with ethylene-producing fruits like bananas to accelerate ripening</li>
+            <li><i class="fas fa-check-circle"></i> Check daily by gently pressing - ripe when slightly soft</li>
+            <li><i class="fas fa-check-circle"></i> Once ripe, refrigerate to slow further ripening (10-13°C)</li>
+            <li><i class="fas fa-check-circle"></i> Handle carefully to avoid bruising which leads to uneven ripening</li>
+          </ul>
+
+        {% elif disease_name == 'Healthy ripe' %}
+          <span class="disease-name-badge">HEALTHY RIPE FRUIT</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            This mangosteen is ripe and in excellent condition. Enjoy fresh or store appropriately.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-check-circle"></i> Storage and Handling</h4>
+          </div>
+          <ul class="info-list recommendations-list">
+            <li><i class="fas fa-check-circle"></i> Store in refrigerator at 10-13°C with high humidity if possible</li>
+            <li><i class="fas fa-check-circle"></i> Consume within 3-5 days for best quality and flavor</li>
+            <li><i class="fas fa-check-circle"></i> Place in single layer or use dividers to prevent bruising</li>
+            <li><i class="fas fa-check-circle"></i> Wash only immediately before consumption to prevent mold</li>
+            <li><i class="fas fa-check-circle"></i> For longer storage, consider freezing pulp in airtight containers</li>
+          </ul>
+
+        {% elif disease_name == 'Over ripe' %}
+          <span class="disease-name-badge">OVER RIPE FRUIT</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            This fruit has passed its optimal ripeness stage. Use promptly or repurpose for processing.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-check-circle"></i> Usage Recommendations</h4>
+          </div>
+          <ul class="info-list recommendations-list">
+            <li><i class="fas fa-check-circle"></i> Inspect carefully - discard if showing mold or fermentation</li>
+            <li><i class="fas fa-check-circle"></i> Use immediately in smoothies, juices, or purees</li>
+            <li><i class="fas fa-check-circle"></i> Consider making jams, sauces, or desserts that require cooking</li>
+            <li><i class="fas fa-check-circle"></i> Remove any discolored or fermented sections before use</li>
+            <li><i class="fas fa-check-circle"></i> Refrigerate if not using immediately (consume within 24 hours)</li>
+          </ul>
+
+        {% elif disease_name == 'Raw' %}
+          <span class="disease-name-badge">RAW FRUIT</span>
+          <p class="disease-description">
+            <i class="fas fa-quote-left" style="color: #667eea; margin-right: 0.5rem;"></i>
+            This mangosteen is not yet ripe. Let it mature naturally before consumption.
+            <i class="fas fa-quote-right" style="color: #667eea; margin-left: 0.5rem;"></i>
+          </p>
+          <div class="info-section-divider">
+            <h4 class="info-subtitle"><i class="fas fa-check-circle"></i> Ripening Process</h4>
+          </div>
+          <ul class="info-list recommendations-list">
+            <li><i class="fas fa-check-circle"></i> Leave at room temperature (20-25°C) out of direct sunlight</li>
+            <li><i class="fas fa-check-circle"></i> Place in paper bag with ethylene-producing fruits to speed ripening</li>
+            <li><i class="fas fa-check-circle"></i> Check daily - ripe when color deepens and fruit yields slightly to pressure</li>
+            <li><i class="fas fa-check-circle"></i> Do not refrigerate until fully ripe as cold stops ripening process</li>
+            <li><i class="fas fa-check-circle"></i> Expect ripening to take 2-5 days depending on initial maturity</li>
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Action Buttons -->
+    <div class="result-actions">
+      <a href="{{ url_for('scan') }}" class="action-button back-button">
+        <i class="fas fa-redo"></i> Scan Another
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="action-button">
+        <i class="fas fa-home"></i> Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

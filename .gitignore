@@ -1,0 +1,57 @@
+# --- 1. Python & Virtual Environment (Crucial) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Specific ignore for your venv folder seen in image
+mangosqueen_venv/
+
+# --- 2. Secrets & Environment Variables (SECURITY CRITICAL) ---
+.env
+.flaskenv
+*.env
+
+# BE CAREFUL: This ignores ALL json files.
+# This is good for security now, but if you add a non-secret JSON later,
+# you will need to use 'git add -f filename.json'
+*.json
+
+# Specific Secret Files (redundant because of *.json, but good to be explicit)
+client_secrets.json
+mangosqueen-firebase.json
+mangosqueen-*-firebase-adminsdk-*.json
+*credential*.json
+*secret*.json
+
+# --- 3. Database & Instance Folder ---
+instance/
+*.db
+*.sqlite3
+*.sqlite
+.webassets-cache
+
+# --- 4. Large AI Models ---
+# GitHub rejects large files.
+*.keras
+*.h5
+# ADDED THIS: You have tflite files in your screenshot
+
+
+# --- 5. User Uploaded Content ---
+static/uploads/*
+!static/uploads/.gitkeep
+
+# --- 6. IDE & System Files ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

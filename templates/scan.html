@@ -1,0 +1,1595 @@
+{% extends "base.html" %}
+
+{% block title %}
+MANGOSQUEEN - Scan
+{% endblock %}
+
+{% block content %}
+
+<!-- Critical CSS to prevent FOUC -->
+<style>
+  /* Page load transition */
+  body {
+    animation: pageLoadFade 0.3s ease-in;
+  }
+
+  @keyframes pageLoadFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Main Container */
+  .scan-page-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scan Container - Consistent with Dashboard */
+  .scan-container {
+    max-width: 1700px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .scan-container h2 {
+    color: #667eea;
+    margin-bottom: 0.5rem;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .scan-description {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-weight: 500;
+  }
+
+  /* Tab Navigation - Modern Design */
+  .scan-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .tab-btn {
+    padding: 0.8rem 1.8rem;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+  }
+
+  .tab-btn:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+  }
+
+  .tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  /* Tab Content */
+  .tab-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .tab-pane {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .tab-pane.active {
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.4s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Upload Area */
+  .upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    height: 100%;
+  }
+
+  .file-input-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  /* Updated Button Styles - All Purple Outline */
+  .upload-label,
+  .scan-button,
+  .camera-button,
+  .action-button {
+    padding: 0.8rem 1.8rem;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    background: white;
+    color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  }
+
+  .upload-label:hover:not(:disabled),
+  .scan-button:hover:not(:disabled),
+  .camera-button:hover:not(:disabled),
+  .action-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  /* Delete Button - Danger/Red Style */
+  .delete-button {
+    padding: 0.8rem 1.8rem;
+    border: 2px solid #dc3545;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    background: white;
+    color: #dc3545;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
+  }
+
+  .delete-button:hover {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+  }
+
+  .upload-label i,
+  .delete-button i,
+  .scan-button i,
+  .camera-button i,
+  .action-button i {
+    font-size: 1.1rem;
+  }
+
+  /* Disabled Button States */
+  .scan-button:disabled,
+  .camera-button:disabled,
+  .action-button:disabled {
+    background: #f5f5f5;
+    color: #aaaaaa;
+    border-color: #ddd;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Preview Container - Dynamic Sizing */
+  .preview-container {
+    max-width: 900px;
+    max-height: 550px;
+    width: auto;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin: 1rem auto;
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  .upload-area form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .upload-buttons {
+    margin-top: 1rem;
+  }
+
+  /* Camera Area - Single Container */
+  .camera-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    height: 100%;
+  }
+
+  .camera-preview {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    min-height: 400px;
+    max-height: 550px;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+  }
+
+  .camera-feed,
+  .capture-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    font-weight: 600;
+    z-index: 5;
+  }
+
+  .camera-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  /* Real-Time Camera Area - Adaptive Layout */
+  .realtime-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    flex: 1;
+    height: 100%;
+  }
+
+  .realtime-preview {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    min-height: 400px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1rem 0;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+  }
+
+  .realtime-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .realtime-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    font-weight: 600;
+  }
+
+  .realtime-results {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    z-index: 10;
+    min-width: 220px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .detection-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .confidence-display,
+  .disease-display,
+  .fps-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .confidence-label,
+  .disease-label,
+  .fps-label {
+    font-weight: 700;
+    color: #cbd5e0;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  #confidence-value {
+    font-size: clamp(1rem, 2.5vw, 1.2rem);
+    font-weight: 800;
+    color: #4CAF50;
+  }
+
+  #disease-name {
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+    color: #FFC107;
+    font-weight: 800;
+  }
+
+  #fps-value {
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+    color: #2196F3;
+    font-weight: 800;
+  }
+
+  .realtime-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .status-message {
+    color: #2196F3;
+    margin-top: 1rem;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    text-align: center;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+  }
+
+  /* Error Messages */
+  .error-message {
+    color: #f5576c;
+    margin-top: 1rem;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    text-align: center;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #ffe3e6 0%, #ffd1d6 100%);
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.2);
+  }
+
+  /* Flash Messages */
+  .flash-message {
+    margin-top: 1rem;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-align: center;
+    font-size: clamp(0.85rem, 2vw, 0.95rem);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .flash-message.success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+  }
+
+  .flash-message.error {
+    background: linear-gradient(135deg, #ffe3e6 0%, #ffd1d6 100%);
+    color: #721c24;
+  }
+
+  /* Custom Modal Styles */
+  .custom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    animation: modalFadeIn 0.3s ease;
+  }
+
+  .custom-modal.show {
+    display: flex;
+  }
+
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 90%;
+    width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: modalSlideIn 0.3s ease;
+    position: relative;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      transform: translateY(-50px) scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .modal-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-icon.success {
+    color: #4CAF50;
+  }
+
+  .modal-icon.error {
+    color: #f5576c;
+  }
+
+  .modal-icon.warning {
+    color: #FF9800;
+  }
+
+  .modal-title {
+    font-size: clamp(1.3rem, 3vw, 1.6rem);
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .modal-message {
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .modal-close-btn,
+  .modal-confirm-btn,
+  .modal-cancel-btn {
+    padding: 0.8rem 2rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .modal-close-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .modal-close-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .modal-confirm-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  }
+
+  .modal-confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+  }
+
+  .modal-cancel-btn {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  }
+
+  .modal-cancel-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  /* Utility Classes */
+  .hidden {
+    display: none !important;
+  }
+
+  /* Responsive Design - Mobile First Approach */
+  
+  /* Mobile Portrait (320px - 480px) */
+  @media (max-width: 480px) {
+    .scan-page-container {
+      margin-top: 0.5rem;
+    }
+
+    .scan-container {
+      padding: 1rem;
+      border-radius: 12px;
+    }
+
+    .scan-container h2 {
+      font-size: 1.5rem;
+    }
+
+    .scan-description {
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .scan-tabs {
+      flex-direction: column;
+      padding: 0.3rem;
+      gap: 0.3rem;
+    }
+
+    .tab-btn {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 0.85rem;
+    }
+
+    .file-input-container,
+    .camera-controls,
+    .realtime-controls {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+      gap: 0.8rem;
+    }
+
+    .upload-label,
+    .delete-button,
+    .camera-button,
+    .scan-button,
+    .action-button {
+      width: 100%;
+      padding: 0.7rem 1.2rem;
+    }
+
+    .preview-container {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 12px;
+    }
+
+    .camera-preview {
+      min-height: 300px;
+      max-height: 400px;
+      border-radius: 12px;
+    }
+
+    .realtime-preview {
+      aspect-ratio: 1 / 1;
+      min-height: 300px;
+      max-height: 400px;
+      border-radius: 12px;
+    }
+
+    .realtime-results {
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      min-width: auto;
+    }
+
+    .detection-info {
+      gap: 8px;
+    }
+
+    .confidence-label,
+    .disease-label,
+    .fps-label {
+      font-size: 0.75rem;
+    }
+
+    #confidence-value,
+    #disease-name,
+    #fps-value {
+      font-size: 0.9rem;
+    }
+
+    .modal-content {
+      width: 85%;
+      padding: 1.5rem;
+    }
+
+    .modal-icon {
+      font-size: 2.5rem;
+    }
+  }
+
+  /* Mobile Landscape / Small Tablet (481px - 768px) */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .scan-container {
+      padding: 1.2rem;
+    }
+
+    .scan-tabs {
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .preview-container {
+      max-height: 450px;
+    }
+
+    .camera-preview {
+      min-height: 350px;
+      max-height: 450px;
+    }
+
+    .realtime-preview {
+      aspect-ratio: 4 / 3;
+      min-height: 350px;
+      max-height: 450px;
+    }
+
+    .realtime-results {
+      top: 12px;
+      left: 12px;
+      right: auto;
+      padding: 15px;
+    }
+
+    .modal-content {
+      width: 80%;
+    }
+  }
+
+  /* Tablet Landscape (769px - 1024px) */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .scan-container {
+      padding: 1.5rem;
+    }
+
+    .preview-container {
+      max-height: 500px;
+    }
+
+    .camera-preview {
+      min-height: 400px;
+      max-height: 500px;
+    }
+
+    .realtime-preview {
+      aspect-ratio: 16 / 9;
+      min-height: 400px;
+      max-height: 500px;
+    }
+
+    .file-input-container,
+    .camera-controls,
+    .realtime-controls {
+      flex-wrap: wrap;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .modal-content {
+      width: 450px;
+    }
+  }
+
+  /* Desktop (1025px - 1440px) */
+  @media (min-width: 1025px) and (max-width: 1440px) {
+    .preview-container {
+      max-height: 550px;
+    }
+
+    .camera-preview {
+      min-height: 450px;
+      max-height: 550px;
+    }
+
+    .realtime-preview {
+      aspect-ratio: 16 / 9;
+      min-height: 450px;
+      max-height: 550px;
+    }
+  }
+
+  /* Large Desktop (1441px+) */
+  @media (min-width: 1441px) {
+    .scan-container {
+      padding: 2.5rem;
+    }
+
+    .preview-container {
+      max-width: 1000px;
+      max-height: 600px;
+    }
+
+    .camera-preview {
+      max-width: 1000px;
+      min-height: 500px;
+      max-height: 600px;
+    }
+
+    .realtime-preview {
+      max-width: 1000px;
+      aspect-ratio: 16 / 9;
+      min-height: 500px;
+      max-height: 600px;
+    }
+
+    .modal-content {
+      width: 500px;
+    }
+  }
+
+  /* Orientation-based adjustments */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .preview-container,
+    .camera-preview,
+    .realtime-preview {
+      max-height: 70vh;
+    }
+
+    .scan-container {
+      padding: 1rem;
+    }
+
+    .scan-description {
+      margin-bottom: 1rem;
+    }
+  }
+
+  /* High DPI screens */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .preview-container,
+    .camera-preview,
+    .realtime-preview {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+  }
+</style>
+
+<!-- Main Container -->
+<div class="scan-page-container">
+  <!-- Scan Container -->
+  <div class="scan-container">
+    <h2>Mangosteen Disease Scanner</h2>
+    <p class="scan-description">Upload an image, use your camera, or enable real-time detection for mangosteen plants</p>
+
+    <!-- Tab Navigation -->
+    <div class="scan-tabs">
+      <button class="tab-btn active" data-tab="upload">
+        <i class="fas fa-cloud-upload-alt"></i> Upload Image
+      </button>
+      <button class="tab-btn" data-tab="camera">
+        <i class="fas fa-camera"></i> Use Camera
+      </button>
+      <button class="tab-btn" data-tab="realtime">
+        <i class="fas fa-video"></i> Real-Time Detection
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Upload Image Tab -->
+      <div id="upload-tab" class="tab-pane active">
+        <div class="upload-area">
+          <form id="upload-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+            <div class="file-input-container">
+              <input type="file" id="image-upload" name="file" accept="image/*" class="file-input">
+              <label for="image-upload" class="upload-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Choose Image</span>
+              </label>
+              <button id="delete-image-btn" type="button" class="delete-button hidden">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+            </div>
+            <div id="image-preview-container" class="preview-container hidden">
+              <img id="image-preview" class="preview-image" alt="Preview">
+            </div>
+            <div class="upload-buttons">
+              <button id="scan-btn" type="submit" class="scan-button" disabled>
+                <i class="fas fa-search"></i> Scan Image
+              </button>
+            </div>
+          </form>
+          <div id="upload-error" class="error-message hidden"></div>
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+
+      <!-- Camera Tab -->
+      <div id="camera-tab" class="tab-pane">
+        <div class="camera-area">
+          <div class="camera-preview">
+            <video id="camera-feed" class="camera-feed hidden" autoplay playsinline></video>
+            <div id="camera-overlay" class="camera-overlay">
+              <span><i class="fas fa-camera"></i> Camera is off</span>
+            </div>
+            <img id="capture-preview" class="capture-preview hidden" alt="Captured">
+          </div>
+          <form id="camera-form" action="{{ url_for('scan') }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" id="camera-image-data" name="image_data">
+            <div class="camera-controls">
+              <button id="start-camera-btn" type="button" class="camera-button">
+                <i class="fas fa-play"></i> Start Camera
+              </button>
+              <button id="capture-btn" type="button" class="camera-button" disabled>
+                <i class="fas fa-circle"></i> Capture
+              </button>
+              <button id="retake-btn" type="button" class="camera-button hidden">
+                <i class="fas fa-redo"></i> Retake
+              </button>
+              <button id="stop-camera-btn" type="button" class="camera-button" disabled>
+                <i class="fas fa-stop"></i> Stop
+              </button>
+              <button id="scan-camera-btn" type="submit" class="scan-button" disabled>
+                <i class="fas fa-search"></i> Scan Image
+              </button>
+            </div>
+          </form>
+          <div id="camera-error" class="error-message hidden"></div>
+        </div>
+      </div>
+
+      <!-- Real-Time Detection Tab -->
+      <div id="realtime-tab" class="tab-pane">
+        <div class="realtime-area">
+          <div class="realtime-preview">
+            <video id="realtime-feed" class="realtime-feed hidden" autoplay playsinline></video>
+            <div id="realtime-overlay" class="realtime-overlay">
+              <span><i class="fas fa-video-slash"></i> Real-time detection is off</span>
+            </div>
+            <canvas id="realtime-canvas" style="display: none;"></canvas>
+            <div id="realtime-results" class="realtime-results hidden">
+              <div class="detection-info">
+                <div class="disease-display">
+                  <span class="disease-label">Disease:</span>
+                  <span id="disease-name">-</span>
+                </div>
+                <div class="confidence-display">
+                  <span class="confidence-label">Confidence:</span>
+                  <span id="confidence-value">-</span>
+                </div>
+                <div class="fps-display">
+                  <span class="fps-label">FPS:</span>
+                  <span id="fps-value">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="realtime-controls">
+            <button id="start-realtime-btn" type="button" class="camera-button">
+              <i class="fas fa-play"></i> Start Real-Time Detection
+            </button>
+            <button id="stop-realtime-btn" type="button" class="camera-button" disabled>
+              <i class="fas fa-stop"></i> Stop Detection
+            </button>
+            <button id="save-detection-btn" type="button" class="action-button" disabled>
+              <i class="fas fa-save"></i> Save Current Detection
+            </button>
+          </div>
+          <div id="realtime-error" class="error-message hidden"></div>
+          <div id="realtime-status" class="status-message hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Success Modal -->
+<div id="success-modal" class="custom-modal">
+  <div class="modal-content">
+    <div class="modal-icon success">
+      <i class="fas fa-check-circle"></i>
+    </div>
+    <h3 class="modal-title">Success!</h3>
+    <p class="modal-message">Detection successfully saved!</p>
+    <div class="modal-buttons">
+      <button class="modal-close-btn" onclick="closeSuccessModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal for Delete -->
+<div id="confirm-modal" class="custom-modal">
+  <div class="modal-content">
+    <div class="modal-icon warning">
+      <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    <h3 class="modal-title">Confirm Delete</h3>
+    <p class="modal-message">Are you sure you want to delete this image?</p>
+    <div class="modal-buttons">
+      <button class="modal-confirm-btn" onclick="confirmDelete()">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+      <button class="modal-cancel-btn" onclick="closeConfirmModal()">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        const tabId = this.getAttribute('data-tab');
+
+        // Update active tab button
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+
+        // Update active tab pane
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+
+        // Stop any active camera streams when switching tabs
+        if (tabId !== 'camera') {
+          stopCamera();
+        }
+        if (tabId !== 'realtime') {
+          stopRealTimeDetection();
+        }
+
+        // Clear any error messages
+        document.getElementById('upload-error').classList.add('hidden');
+        document.getElementById('camera-error').classList.add('hidden');
+        const realtimeError = document.getElementById('realtime-error');
+        if (realtimeError) {
+          realtimeError.classList.add('hidden');
+        }
+      });
+    });
+
+    // Upload Image functionality
+    const imageUpload = document.getElementById('image-upload');
+    const imagePreview = document.getElementById('image-preview');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const deleteImageBtn = document.getElementById('delete-image-btn');
+    const scanBtn = document.getElementById('scan-btn');
+    const uploadError = document.getElementById('upload-error');
+
+    imageUpload.addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        const file = e.target.files[0];
+
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            // Get natural dimensions
+            const naturalWidth = img.naturalWidth;
+            const naturalHeight = img.naturalHeight;
+
+            // Set max dimensions
+            const maxWidth = 900;
+            const maxHeight = 550;
+
+            let displayWidth = naturalWidth;
+            let displayHeight = naturalHeight;
+
+            // Check if image exceeds maximum dimensions
+            if (naturalWidth > maxWidth || naturalHeight > maxHeight) {
+              const widthRatio = maxWidth / naturalWidth;
+              const heightRatio = maxHeight / naturalHeight;
+              const ratio = Math.min(widthRatio, heightRatio);
+
+              displayWidth = naturalWidth * ratio;
+              displayHeight = naturalHeight * ratio;
+            }
+
+            // Apply dimensions to container
+            imagePreviewContainer.style.width = displayWidth + 'px';
+            imagePreviewContainer.style.height = displayHeight + 'px';
+
+            // Set image source
+            imagePreview.src = event.target.result;
+            imagePreviewContainer.classList.remove('hidden');
+            deleteImageBtn.classList.remove('hidden');
+            scanBtn.disabled = false;
+            uploadError.classList.add('hidden');
+          };
+          img.src = event.target.result;
+        };
+
+        reader.readAsDataURL(file);
+      }
+    });
+
+    deleteImageBtn.addEventListener('click', function() {
+      showConfirmModal();
+    });
+
+    function confirmDelete() {
+      imageUpload.value = '';
+      imagePreview.src = '';
+      imagePreviewContainer.classList.add('hidden');
+      imagePreviewContainer.style.width = 'auto';
+      imagePreviewContainer.style.height = 'auto';
+      deleteImageBtn.classList.add('hidden');
+      scanBtn.disabled = true;
+      closeConfirmModal();
+    }
+
+    // Camera functionality
+    const cameraFeed = document.getElementById('camera-feed');
+    const cameraOverlay = document.getElementById('camera-overlay');
+    const capturePreview = document.getElementById('capture-preview');
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const retakeBtn = document.getElementById('retake-btn');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    const scanCameraBtn = document.getElementById('scan-camera-btn');
+    const cameraError = document.getElementById('camera-error');
+    const cameraImageData = document.getElementById('camera-image-data');
+    let stream = null;
+
+    startCameraBtn.addEventListener('click', startCamera);
+    captureBtn.addEventListener('click', captureImage);
+    retakeBtn.addEventListener('click', retakeImage);
+    stopCameraBtn.addEventListener('click', stopCamera);
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          },
+          facingMode: 'environment'
+        }
+      })
+      .then(function(s) {
+        stream = s;
+        cameraFeed.srcObject = stream;
+        cameraFeed.classList.remove('hidden');
+        cameraOverlay.classList.add('hidden');
+        capturePreview.classList.add('hidden');
+        cameraError.classList.add('hidden');
+
+        startCameraBtn.disabled = true;
+        captureBtn.disabled = false;
+        retakeBtn.classList.add('hidden');
+        stopCameraBtn.disabled = false;
+        scanCameraBtn.disabled = true;
+      })
+      .catch(function(err) {
+        console.error("Error accessing camera: ", err);
+        cameraOverlay.innerHTML = '<span><i class="fas fa-exclamation-triangle"></i> Could not access camera</span>';
+        cameraOverlay.classList.remove('hidden');
+        cameraError.textContent = "Could not access camera. Please check permissions.";
+        cameraError.classList.remove('hidden');
+      });
+    }
+
+    function captureImage() {
+      const canvas = document.createElement('canvas');
+      canvas.width = cameraFeed.videoWidth;
+      canvas.height = cameraFeed.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(cameraFeed, 0, 0);
+
+      // Get base64 image data and set to preview
+      const imageDataUrl = canvas.toDataURL('image/jpeg');
+      capturePreview.src = imageDataUrl;
+      
+      // Hide camera feed, show captured preview
+      cameraFeed.classList.add('hidden');
+      capturePreview.classList.remove('hidden');
+
+      // Set the base64 image data directly to the hidden input field
+      cameraImageData.value = imageDataUrl;
+
+      // Update button states
+      captureBtn.disabled = true;
+      retakeBtn.classList.remove('hidden');
+      scanCameraBtn.disabled = false;
+      cameraError.classList.add('hidden');
+    }
+
+    function retakeImage() {
+      // Show camera feed again, hide captured preview
+      cameraFeed.classList.remove('hidden');
+      capturePreview.classList.add('hidden');
+      capturePreview.src = '';
+      cameraImageData.value = '';
+
+      // Update button states
+      captureBtn.disabled = false;
+      retakeBtn.classList.add('hidden');
+      scanCameraBtn.disabled = true;
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        cameraFeed.srcObject = null;
+        cameraFeed.classList.add('hidden');
+        capturePreview.classList.add('hidden');
+        capturePreview.src = '';
+        cameraImageData.value = '';
+        cameraOverlay.classList.remove('hidden');
+        cameraOverlay.innerHTML = '<span><i class="fas fa-camera"></i> Camera is off</span>';
+
+        startCameraBtn.disabled = false;
+        captureBtn.disabled = true;
+        retakeBtn.classList.add('hidden');
+        stopCameraBtn.disabled = true;
+        scanCameraBtn.disabled = true;
+      }
+    }
+
+    // Real-Time Detection functionality
+    const realtimeFeed = document.getElementById('realtime-feed');
+    const realtimeOverlay = document.getElementById('realtime-overlay');
+    const realtimeCanvas = document.getElementById('realtime-canvas');
+    const realtimeResults = document.getElementById('realtime-results');
+    const startRealtimeBtn = document.getElementById('start-realtime-btn');
+    const stopRealtimeBtn = document.getElementById('stop-realtime-btn');
+    const saveDetectionBtn = document.getElementById('save-detection-btn');
+    const realtimeError = document.getElementById('realtime-error');
+    const realtimeStatus = document.getElementById('realtime-status');
+
+    // Detection variables
+    let realtimeStream = null;
+    let detectionInterval = null;
+    let isDetecting = false;
+    let lastDetection = null;
+    let frameCount = 0;
+    let lastFrameTime = Date.now();
+
+    startRealtimeBtn.addEventListener('click', startRealTimeDetection);
+    stopRealtimeBtn.addEventListener('click', stopRealTimeDetection);
+    saveDetectionBtn.addEventListener('click', saveCurrentDetection);
+
+    function startRealTimeDetection() {
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            ideal: 1280
+          },
+          height: {
+            ideal: 720
+          },
+          facingMode: 'environment'
+        }
+      })
+      .then(function(s) {
+        realtimeStream = s;
+        realtimeFeed.srcObject = realtimeStream;
+        realtimeFeed.classList.remove('hidden');
+        realtimeOverlay.classList.add('hidden');
+        realtimeResults.classList.remove('hidden');
+        realtimeError.classList.add('hidden');
+
+        // Update button states
+        startRealtimeBtn.disabled = true;
+        stopRealtimeBtn.disabled = false;
+        saveDetectionBtn.disabled = false;
+
+        // Show status
+        realtimeStatus.textContent = "Real-time detection started. Processing frames...";
+        realtimeStatus.classList.remove('hidden');
+
+        // Start detection loop
+        isDetecting = true;
+        startDetectionLoop();
+      })
+      .catch(function(err) {
+        console.error("Error accessing camera for real-time detection: ", err);
+        realtimeOverlay.innerHTML = '<span><i class="fas fa-exclamation-triangle"></i> Could not access camera</span>';
+        realtimeOverlay.classList.remove('hidden');
+        realtimeError.textContent = "Could not access camera. Please check permissions.";
+        realtimeError.classList.remove('hidden');
+      });
+    }
+
+    function stopRealTimeDetection() {
+      isDetecting = false;
+
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
+
+      if (realtimeStream) {
+        realtimeStream.getTracks().forEach(track => track.stop());
+        realtimeStream = null;
+        realtimeFeed.srcObject = null;
+        realtimeFeed.classList.add('hidden');
+        realtimeOverlay.classList.remove('hidden');
+        realtimeOverlay.innerHTML = '<span><i class="fas fa-video-slash"></i> Real-time detection is off</span>';
+        realtimeResults.classList.add('hidden');
+
+        startRealtimeBtn.disabled = false;
+        stopRealtimeBtn.disabled = true;
+        saveDetectionBtn.disabled = true;
+
+        realtimeStatus.classList.add('hidden');
+
+        // Reset display values
+        document.getElementById('disease-name').textContent = '-';
+        document.getElementById('confidence-value').textContent = '-';
+        document.getElementById('fps-value').textContent = '0';
+      }
+    }
+
+    function startDetectionLoop() {
+      // Process frames every 500ms (2 FPS) to balance performance and responsiveness
+      detectionInterval = setInterval(() => {
+        if (isDetecting && realtimeFeed.videoWidth > 0) {
+          processCurrentFrame();
+        }
+      }, 500);
+    }
+
+    function processCurrentFrame() {
+      // Setup canvas for frame capture
+      realtimeCanvas.width = realtimeFeed.videoWidth;
+      realtimeCanvas.height = realtimeFeed.videoHeight;
+      const context = realtimeCanvas.getContext('2d');
+
+      // Draw current frame to canvas
+      context.drawImage(realtimeFeed, 0, 0);
+
+      // Convert to base64 for sending to server
+      const imageDataUrl = realtimeCanvas.toDataURL('image/jpeg', 0.8);
+
+      // Update FPS counter
+      frameCount++;
+      const currentTime = Date.now();
+      if (currentTime - lastFrameTime >= 1000) {
+        const fps = frameCount;
+        document.getElementById('fps-value').textContent = fps.toString();
+        frameCount = 0;
+        lastFrameTime = currentTime;
+      }
+
+      // Send frame for analysis
+      sendFrameForAnalysis(imageDataUrl);
+    }
+
+    function sendFrameForAnalysis(imageData) {
+      const formData = new FormData();
+      formData.append('image_data', imageData);
+      formData.append('realtime', 'true');
+
+      fetch('/realtime-scan', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          updateDetectionResults(data);
+          lastDetection = data;
+        } else {
+          console.error('Detection error:', data.error);
+          // Don't show error in UI for real-time to avoid flickering
+        }
+      })
+      .catch(error => {
+        console.error('Network error:', error);
+        // Don't show network errors in UI for real-time
+      });
+    }
+
+    function updateDetectionResults(data) {
+      // Update disease name
+      const diseaseName = document.getElementById('disease-name');
+      diseaseName.textContent = data.predicted_class || 'Unknown';
+
+      // Update confidence with color coding
+      const confidenceValue = document.getElementById('confidence-value');
+      const confidence = parseFloat(data.confidence) || 0;
+      confidenceValue.textContent = confidence.toFixed(1) + '%';
+
+      // Color code confidence level
+      if (confidence >= 80) {
+        confidenceValue.style.color = '#4CAF50'; // Green for high confidence
+      } else if (confidence >= 60) {
+        confidenceValue.style.color = '#FF9800'; // Orange for medium confidence
+      } else {
+        confidenceValue.style.color = '#F44336'; // Red for low confidence
+      }
+
+      // Update disease name color based on type
+      const diseaseNameElement = document.getElementById('disease-name');
+      if (data.predicted_class && data.predicted_class.toLowerCase().includes('healthy')) {
+        diseaseNameElement.style.color = '#4CAF50'; // Green for healthy
+      } else if (data.predicted_class && data.predicted_class !== 'Unknown') {
+        diseaseNameElement.style.color = '#F44336'; // Red for disease detected
+      } else {
+        diseaseNameElement.style.color = '#FFC107'; // Yellow for unknown
+      }
+    }
+
+    function saveCurrentDetection() {
+      if (!lastDetection || !realtimeStream) {
+        showSuccessModal('Error', 'No detection data available to save.', 'error');
+        return;
+      }
+
+      // Capture current frame
+      realtimeCanvas.width = realtimeFeed.videoWidth;
+      realtimeCanvas.height = realtimeFeed.videoHeight;
+      const context = realtimeCanvas.getContext('2d');
+      context.drawImage(realtimeFeed, 0, 0);
+
+      const imageDataUrl = realtimeCanvas.toDataURL('image/jpeg', 0.9);
+
+      // Send to server to save
+      const formData = new FormData();
+      formData.append('image_data', imageDataUrl);
+      formData.append('detection_data', JSON.stringify(lastDetection));
+      formData.append('save_detection', 'true');
+
+      fetch('/save-detection', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showSuccessModal();
+          realtimeStatus.textContent = "Detection saved! Continuing real-time analysis...";
+        } else {
+          showSuccessModal('Error', 'Error saving detection: ' + (data.error || 'Unknown error'), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error saving detection:', error);
+        showSuccessModal('Error', 'Error saving detection. Please try again.', 'error');
+      });
+    }
+
+    // Custom Modal Functions
+    function showSuccessModal(title = 'Success!', message = 'Detection successfully saved!', type = 'success') {
+      const modal = document.getElementById('success-modal');
+      const modalTitle = modal.querySelector('.modal-title');
+      const modalMessage = modal.querySelector('.modal-message');
+      const modalIcon = modal.querySelector('.modal-icon');
+      const modalIconElement = modalIcon.querySelector('i');
+      
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      
+      // Update icon and colors based on type
+      if (type === 'error') {
+        modalIconElement.className = 'fas fa-exclamation-circle';
+        modalIcon.className = 'modal-icon error';
+      } else {
+        modalIconElement.className = 'fas fa-check-circle';
+        modalIcon.className = 'modal-icon success';
+      }
+      
+      modal.classList.add('show');
+    }
+
+    window.closeSuccessModal = function() {
+      const modal = document.getElementById('success-modal');
+      modal.classList.remove('show');
+    }
+
+    function showConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('show');
+    }
+
+    window.closeConfirmModal = function() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('show');
+    }
+
+    window.confirmDelete = confirmDelete;
+
+    // Close modals when clicking outside
+    document.getElementById('success-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeSuccessModal();
+      }
+    });
+
+    document.getElementById('confirm-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeConfirmModal();
+      }
+    });
+
+    // Form validation
+    document.getElementById('camera-form').addEventListener('submit', function(e) {
+      if (!cameraImageData.value) {
+        e.preventDefault();
+        cameraError.textContent = "No image captured. Please capture an image first.";
+        cameraError.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('upload-form').addEventListener('submit', function(e) {
+      if (!imageUpload.files || imageUpload.files.length === 0) {
+        e.preventDefault();
+        uploadError.textContent = "No image selected. Please select an image first.";
+        uploadError.classList.remove('hidden');
+      }
+    });
+
+    // Page Visibility API - Auto-stop cameras when tab/app is hidden
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        // Page is hidden (user switched tabs or minimized)
+        if (stream) {
+          stopCamera();
+        }
+        if (realtimeStream) {
+          stopRealTimeDetection();
+        }
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      stopCamera();
+      stopRealTimeDetection();
+    });
+  });
+</script>
+
+{% endblock %}

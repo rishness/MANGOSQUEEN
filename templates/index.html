@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANGOSQUEEN</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <style>
+        /* Custom styles for animations and non-utility designs */
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --light-bg: #f5f3ff;
+            --purple-100: #e9d5ff;
+            --light-purple: #f3ebff;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            overflow-x: hidden;
+        }
+        /* Container improvements */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+        /* Ultra-wide screen support */
+        @media (min-width: 2560px) {
+            .container {
+                max-width: 2200px;
+            }
+        }
+        /* -------------------------------------- */
+        /* 1. Dynamic Navbar & Mobile Menu */
+        /* -------------------------------------- */
+        .navbar-top {
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            padding: 1rem 0;
+        }
+        .navbar-top.scrolled {
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .nav-link {
+            position: relative;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-decoration: none !important;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.3s ease;
+            border-radius: 1px;
+        }
+        .nav-link:hover::after,
+        .nav-link:focus::after {
+            width: 80%;
+        }
+        .navbar-top:not(.scrolled) .nav-link::after {
+            background: white;
+        }
+        .navbar-top:not(.scrolled) .nav-link:focus::after {
+            background: white;
+            width: 80%;
+        }
+        @media (max-width: 1023px) {
+            .navbar-menu-mobile {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: var(--light-purple);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+                z-index: 50;
+                padding: 1rem 0;
+            }
+            .navbar-menu-mobile.active {
+                display: block;
+            }
+            .navbar-menu-mobile a {
+                color: #6b46c1 !important;
+                border-bottom-color: rgba(107, 70, 193, 0.1) !important;
+                text-decoration: none !important;
+            }
+            .navbar-menu-mobile a:hover {
+                background-color: rgba(107, 70, 193, 0.1) !important;
+            }
+            .mobile-signup-btn {
+                background: #a78bfa !important;
+                color: white !important;
+                transition: all 0.3s ease;
+            }
+            .mobile-signup-btn:hover {
+                background: #8b5cf6 !important;
+                transform: translateY(-2px);
+            }
+        }
+        /* -------------------------------------- */
+        /* 2. Landing Page & Enhanced Home Design */
+        /* -------------------------------------- */
+        .landing-page {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            padding: 2rem 1rem;
+            text-align: left;
+        }
+        .circles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .circles li {
+            position: absolute;
+            display: block;
+            list-style: none;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            animation: animate 25s linear infinite;
+            bottom: -150px;
+            border-radius: 50%;
+        }
+        .circles li:nth-child(1) { left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+        .circles li:nth-child(2) { left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .circles li:nth-child(3) { left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+        .circles li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+        .circles li:nth-child(5) { left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .circles li:nth-child(6) { left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+        .circles li:nth-child(7) { left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
+        .circles li:nth-child(8) { left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+        .circles li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .circles li:nth-child(10) { left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
+        @keyframes animate {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+            100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+        }
+        /* Two-column layout for enhanced home design */
+        .content-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            width: 100%;
+            max-width: 1400px;
+            z-index: 10;
+            padding: 0 2rem;
+        }
+        /* Left column for mangosteen image */
+        .hero-image-column {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        .hero-image-column img {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
+            animation: float 6s ease-in-out infinite;
+        }
+        /* Floating animation for fruit */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        /* Right column for content */
+        .hero-content-column {
+            text-align: left;
+        }
+        .welcome-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 900;
+            text-align: left;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.4s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            line-height: 1.1;
+            background: linear-gradient(90deg, #ffffff 0%, #ffffff 70%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .welcome-title:hover {
+            transform: translateY(-10px);
+        }
+        .welcome-title::after {
+            display: none;
+        }
+        .tagline {
+            font-size: clamp(0.95rem, 2.5vw, 1.3rem);
+            font-weight: 400;
+            text-align: left;
+            margin-bottom: 2.5rem;
+            max-width: 100%;
+            opacity: 0.95;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            min-height: auto;
+            opacity: 0;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .btn-main {
+            padding: clamp(0.85rem, 2vw, 1.125rem) clamp(1.75rem, 4vw, 2.5rem);
+            border-radius: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+            z-index: 1;
+            isolation: isolate;
+            opacity: 0;
+            transform: translateY(20px);
+            white-space: nowrap;
+        }
+        .btn-login {
+            background: #EDE5FF;
+            color: #6b46c1;
+            box-shadow: 0 12px 30px rgba(108, 70, 193, 0.35);
+        }
+        .btn-login:hover {
+            background: #F6F5FC;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(107, 70, 193, 0.5);
+            color: #553c9a;
+        }
+        .btn-learn-more {
+            background: var(--secondary-color);
+            color: white;
+            box-shadow: 0 12px 30px rgba(139, 92, 246, 0.35);
+        }
+        .btn-learn-more:hover {
+            background: #9863F2;
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(139, 92, 246, 0.5);
+            color: #f0e9ff;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        /* ------------------------------------------- */
+        /* RESPONSIVE FIXES FOR TABLET AND MOBILE */
+        /* ------------------------------------------- */
+        
+        @media (max-width: 1023px) {
+            /* Stack columns but center content */
+            .content-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                text-align: center;
+                padding: 0 1.5rem;
+            }
+            
+            /* Ensure Image is ON TOP */
+            .hero-image-column {
+                order: -1; 
+                min-height: 300px;
+                margin-bottom: 1rem;
+            }
+            .hero-image-column img {
+                max-width: 380px;
+                width: 80%;
+            }
+
+            /* Center Text */
+            .hero-content-column {
+                text-align: center;
+            }
+            .welcome-title {
+                text-align: center;
+                background: linear-gradient(90deg, #ffffff 0%, #ffffff 60%, #ffd700 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .tagline {
+                text-align: center;
+            }
+
+            /* FIX: Ensure buttons are side-by-side (row) */
+            .button-container {
+                justify-content: center;
+                flex-direction: row; /* Force row layout */
+                flex-wrap: wrap; /* Wrap only if screen is extremely small */
+                gap: 1rem;
+            }
+            
+            /* Allow buttons to size naturally instead of full width */
+            .btn-main {
+                width: auto;
+                min-width: 150px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .landing-page {
+                padding: 1.5rem 0.75rem;
+            }
+            .content-container {
+                gap: 1.5rem;
+                padding: 0 1rem;
+            }
+            .hero-image-column {
+                min-height: 250px;
+            }
+            .hero-image-column img {
+                max-width: 280px;
+            }
+            .welcome-title {
+                font-size: clamp(2rem, 8vw, 3rem);
+            }
+            .tagline {
+                font-size: clamp(0.9rem, 3vw, 1rem);
+                margin-bottom: 1.5rem;
+            }
+            .button-container {
+                gap: 0.8rem;
+            }
+            .logout-message {
+                top: 80px;
+                right: 15px;
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+            .footer-quick-links {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* -------------------------------------- */
+        /* 3. General Section Styles */
+        /* -------------------------------------- */
+        .section {
+            padding: clamp(3rem, 8vw, 6rem) 1rem;
+            position: relative;
+        }
+        .section-title {
+            font-size: clamp(1.75rem, 5vw, 3rem);
+            font-weight: 800;
+            margin-bottom: clamp(2rem, 6vw, 4rem);
+            text-align: center;
+            position: relative;
+            color: #4a5568;
+            transition: transform 0.4s ease;
+            line-height: 1.2;
+            cursor: pointer;
+        }
+        .section-title:hover {
+            transform: translateY(-5px);
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        .section-title:hover::after {
+            width: 200px;
+        }
+        .bg-light-violet {
+            background-color: var(--light-bg);
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #c4b5fd, transparent);
+            margin: clamp(1.5rem, 4vw, 2rem) auto;
+            width: 90%;
+            max-width: 1400px;
+        }
+        .section-description {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 4rem auto;
+            color: #6b7280;
+            font-size: 1.15rem;
+            line-height: 1.6;
+        }
+        /* -------------------------------------- */
+        /* 4. Service Card Styles */
+        /* -------------------------------------- */
+        .service-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+            height: 100%;
+            padding: clamp(1.5rem, 3vw, 2rem);
+            border-top: 5px solid var(--primary-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .service-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border-color: var(--secondary-color);
+        }
+        .service-card-icon {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 1.2rem;
+            color: var(--secondary-color);
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .service-card:hover .service-card-icon {
+            color: var(--primary-color);
+            transform: rotate(-5deg) scale(1.1);
+        }
+        .stats-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-top: 4rem;
+            border: 1px solid #f0f0f0;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* -------------------------------------- */
+        /* 5. About Us Cards */
+        /* -------------------------------------- */
+        .mission-vision-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: clamp(1.5rem, 4vw, 2rem);
+            height: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .mission-vision-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        .mission-vision-card i {
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+        .mission-vision-card:hover i {
+            transform: scale(1.2);
+            color: var(--secondary-color);
+        }
+        .institution-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            height: 100%;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+            position: relative;
+        }
+        .institution-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        .institution-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 1.5rem 1.5rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .institution-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem auto;
+            background: rgba(255, 255, 255, 1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 0.5px solid rgba(255, 255, 255, 0.5);
+        }
+        .institution-card:hover .institution-logo {
+            transform: scale(1.1) rotate(5deg);
+            background: rgba(255, 255, 255, 1);
+        }
+        .institution-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .institution-body {
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        /* -------------------------------------- */
+        /* 6. Learnings Card Styles */
+        /* -------------------------------------- */
+        .info-card, .video-card, .developer-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+            height: 100%;
+            cursor: pointer;
+            transform: translateY(0) scale(1);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .info-card:hover, .video-card:hover, .developer-card:hover {
+            transform: translateY(-12px) scale(1.05);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2), 0 8px 18px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+        }
+        .info-card:active, .video-card:active, .developer-card:active {
+            transform: translateY(-6px) scale(1.02);
+        }
+        .info-card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            padding: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .info-card:hover .info-card-header {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+        .info-card-body {
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .info-card:hover .info-card-body {
+            background: linear-gradient(to bottom, #ffffff, #f9fafb);
+        }
+        .info-card-header i {
+            transition: transform 0.4s ease, color 0.3s ease;
+            font-size: 1.3rem;
+        }
+        .info-card:hover .info-card-header i {
+            transform: scale(1.3) rotate(8deg);
+            color: #ffd700;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+        .classification-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid;
+            cursor: pointer;
+        }
+        .classification-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+        .classification-image-container {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+            flex-shrink: 0;
+        }
+        .classification-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .classification-card:hover .classification-image {
+            transform: scale(1.1);
+        }
+        .classification-content {
+            flex: 1;
+        }
+        .classification-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #2d3748;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+        .classification-description {
+            color: #718096;
+            line-height: 1.3;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .video-card {
+            overflow: hidden;
+        }
+        .video-thumbnail {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+        .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .video-card:hover .video-thumbnail img {
+            transform: scale(1.1);
+        }
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: white;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        .video-card:hover .play-icon {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        .developer-card {
+            text-align: center;
+            padding: 2rem 1rem;
+            position: relative;
+        }
+        .developer-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1rem;
+            border: 4px solid var(--purple-100);
+            transition: border-color 0.3s ease;
+        }
+        .developer-card:hover .developer-img {
+            border-color: var(--secondary-color);
+        }
+        .developer-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .developer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--light-purple);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .developer-social a:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-3px);
+        }
+        .developer-quote {
+            font-style: italic;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .menu-icon {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 2rem;
+            height: 2rem;
+            transition: all 0.3s linear;
+            z-index: 99;
+        }
+        .menu-icon div {
+            width: 2rem;
+            height: 0.25rem;
+            background: white;
+            border-radius: 10px;
+            transform-origin: 1px;
+            transition: all 0.3s linear;
+        }
+        .navbar-top.scrolled .menu-icon div {
+            background: #333;
+        }
+        .menu-icon.open div:nth-child(1) { transform: rotate(45deg); }
+        .menu-icon.open div:nth-child(2) { opacity: 0; transform: translateX(-20px); }
+        .menu-icon.open div:nth-child(3) { transform: rotate(-45deg); }
+        
+        /* -------------------------------------- */
+        /* 7. Footer Styles (Updated for Small Size & Layout) */
+        /* -------------------------------------- */
+        .footer {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            /* Reduced padding for smaller size */
+            padding: 2rem 2rem 1rem 2rem; 
+            position: relative;
+        }
+        .footer-content {
+            display: grid;
+            /* 3 Columns: Brand (wide), Links (narrow), Contact (wide) */
+            grid-template-columns: 1.5fr 1fr 1.5fr; 
+            gap: 2rem;
+            margin-bottom: 2rem;
+            align-items: start;
+        }
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .footer-brand-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .footer-brand-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            opacity: 0.9;
+            max-width: 350px;
+        }
+        .footer-social-icons {
+            display: flex;
+            gap: 12px;
+            margin-top: 0.5rem;
+        }
+        .footer-social-icons a {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .footer-social-icons a:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+        /* Column Headers */
+        .footer-links-group h4, .footer-contact-group h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        .footer-links-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .footer-links-list li {
+            margin-bottom: 0.6rem;
+        }
+        .footer-links-list a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+        .footer-links-list a:hover {
+            color: white;
+            padding-left: 3px;
+        }
+        /* Contact Section */
+        .footer-contact-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem 0;
+        }
+        .footer-contact-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 0.6rem;
+            font-size: 0.85rem;
+            opacity: 0.95;
+        }
+        .footer-contact-list i {
+            margin-top: 4px;
+            width: 16px; /* Fixed width for alignment */
+        }
+        /* Contact Button - Integrated into column */
+        .contact-btn-small {
+            display: inline-block;
+            background: white;
+            color: var(--secondary-color);
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .contact-btn-small:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            color: var(--primary-color);
+        }
+        .footer-bottom-row {
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        /* Mobile/Tablet Responsive */
+        @media (max-width: 767px) {
+            .footer {
+                padding: 2rem 1.5rem;
+            }
+            .footer-content {
+                grid-template-columns: 1fr; /* Stack vertically on small screens */
+                gap: 2.5rem;
+                text-align: left; /* Explicitly left align */
+            }
+            .footer-brand {
+                align-items: flex-start;
+            }
+            .footer-bottom-row {
+                text-align: left;
+            }
+        }
+        
+        .scroll-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1000;
+        }
+        .scroll-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .scroll-top:hover {
+            background: var(--secondary-color);
+            transform: translateY(-5px);
+        }
+        .navbar-top:not(.scrolled) .nav-link,
+        .navbar-top:not(.scrolled) #navbar-title {
+            color: white;
+        }
+        .navbar-top.scrolled .nav-link,
+        .navbar-top.scrolled #navbar-title {
+            color: #333;
+        }
+        .navbar-top:not(.scrolled) .menu-icon div {
+            background: white;
+        }
+        .navbar-top:not(.scrolled) .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .navbar-top.scrolled .nav-link:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .subsection-title {
+            font-size: clamp(1.5rem, 4vw, 2.25rem) !important;
+        }
+        .developers-title {
+            font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
+        }
+        .logout-message {
+            position: fixed;
+            top: 90px;
+            right: 25px;
+            z-index: 100;
+            background: linear-gradient(135deg, #c2b0eb, #9072d4);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: translateX(100px);
+            opacity: 0;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            white-space: nowrap;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        @keyframes slideInRight {
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="logout-message">
+                    <i class="fas fa-check-circle text-purple-900"></i>
+                    <span>{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <nav id="navbar" class="navbar-top fixed w-full z-50">
+        <div class="container flex justify-between items-center">
+            <a href="#home" class="flex items-center space-x-2 text-xl font-extrabold tracking-wider transition-colors duration-300 text-decoration-none no-underline">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MANGOSQUEEN Logo" class="h-8 w-8 object-contain" id="navbar-logo">
+                <span class="" id="navbar-title">MANGOSQUEEN</span>
+            </a>
+            <div class="hidden lg:flex items-center space-x-2">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#learnings" class="nav-link">Learnings</a>
+                <a href="#about-us" class="nav-link">About Us</a>
+                <a href="{{ url_for('register') }}" class="btn-main text-white px-4 py-2 text-sm font-semibold rounded-lg bg-purple-600 hover:bg-purple-700 transition duration-300 shadow-md ml-4" style="min-width: 100px; opacity: 1; transform: none;">
+                    Sign Up
+                </a>
+            </div>
+            <div class="lg:hidden">
+                <div class="menu-icon" id="mobile-menu-button">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+        <div class="navbar-menu-mobile lg:hidden" id="mobile-menu">
+            <a href="#home" class="block py-3 px-6 hover:bg-purple-50 border-b border-purple-100 transition duration-150" onclick="closeMobileMenu()">Home</a>
+            <a href="#services" class="block py-3 px-6 hover:bg-purple-50 border-b border-purple-100 transition duration-150" onclick="closeMobileMenu()">Services</a>
+            <a href="#learnings" class="block py-3 px-6 hover:bg-purple-50 border-b border-purple-100 transition duration-150" onclick="closeMobileMenu()">Learnings</a>
+            <a href="#about-us" class="block py-3 px-6 hover:bg-purple-50 transition duration-150" onclick="closeMobileMenu()">About Us</a>
+            <div class="p-4">
+                <a href="{{ url_for('register') }}" class="block w-full text-center py-3 text-white font-semibold rounded-lg mobile-signup-btn transition duration-300">
+                    Sign Up
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section id="home" class="landing-page">
+        <div class="circles">
+            <li></li><li></li><li></li><li></li><li></li>
+            <li></li><li></li><li></li><li></li><li></li>
+        </div>
+        
+        <div class="content-container relative z-10 container">
+            <div class="hero-image-column">
+                <img src="{{ url_for('static', filename='assets/img/3DLOGO.png') }}" alt="Fresh Mangosteen Fruits" class="hero-fruits-image">
+            </div>
+
+            <div class="hero-content-column">
+                <h1 class="welcome-title">MANGOSQUEEN</h1>
+                <p class="tagline" id="tagline"></p>
+                <div class="button-container" id="button-container">
+                    <a href="{{ url_for('login') }}" class="btn-main btn-login" id="login-btn">
+                        <i class="fas fa-arrow-right"></i> Get Started
+                    </a>
+                    <a href="#learnings" class="btn-main btn-learn-more" id="learn-more-btn">
+                        <i class="fas fa-book-open"></i> Learn More
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="section">
+       <div class="container">
+           <h2 class="section-title fade-in">Our Core Services</h2>
+           <p class="section-description fade-in">
+               Discover our comprehensive suite of AI-powered tools designed to revolutionize mangosteen farming, from disease detection to automated sorting solutions.
+           </p>
+           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               <div class="service-card fade-in" style="transition-delay: 0.1s;">
+                   <i class="fas fa-search service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">AI-Powered Detection</h3>
+                   <p class="text-gray-600">Instantly detect mangosteen fruit diseases and quality classifications using advanced machine learning models trained with thousands of datasets.</p>
+               </div>
+               <div class="service-card fade-in" style="transition-delay: 0.2s;">
+                   <i class="fas fa-leaf service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Prevention & Treatment</h3>
+                   <p class="text-gray-600">Receive scientifically-backed recommendations for managing detected issues, including preventative measures and effective treatment protocols.</p>
+               </div>
+               <div class="service-card fade-in" style="transition-delay: 0.3s;">
+                   <i class="fas fa-boxes service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Fruit Sorting Machine</h3>
+                   <p class="text-gray-600">Integrate with our automated mangosteen fruit sorting system to simplify post-harvest processing and accurately grade fruits.</p>
+               </div>
+               <div class="service-card fade-in" style="transition-delay: 0.4s;">
+                   <i class="fas fa-bolt service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Real Time Detection</h3>
+                   <p class="text-gray-600">Enable users to utilize detection and sorting capabilities in real-time for immediate results without processing delays.</p>
+               </div>
+               <div class="service-card fade-in" style="transition-delay: 0.5s;">
+                   <i class="fas fa-hands-helping service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Farmer Support</h3>
+                   <p class="text-gray-600">Get expert assistance to help interpret the results of detections and understand specific disease conditions found in your crops.</p>
+               </div>
+               <div class="service-card fade-in" style="transition-delay: 0.6s;">
+                   <i class="fas fa-cloud-upload-alt service-card-icon"></i>
+                   <h3 class="text-xl md:text-2xl font-bold mb-3 text-gray-800">Cloud Storage</h3>
+                   <p class="text-gray-600">Securely save all your detection history which remains accessible for generating necessary data reports and analysis.</p>
+               </div>
+           </div>
+           <div class="stats-container fade-in" style="transition-delay: 0.7s;">
+               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+                   <div class="stat-item">
+                       <span class="stat-number">99%</span>
+                       <span class="stat-label">Detection Accuracy</span>
+                   </div>
+                   <div class="stat-item">
+                       <span class="stat-number">24/7</span>
+                       <span class="stat-label">Support</span>
+                   </div>
+                   <div class="stat-item">
+                       <span class="stat-number">1000+</span>
+                       <span class="stat-label">Farmers Served</span>
+                   </div>
+               </div>
+           </div>
+       </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="learnings" class="section bg-light-violet">
+        <div class="container">
+            <h2 class="section-title fade-in">Get to Know Mangosteen</h2>
+            <p class="section-description fade-in">
+                Expand your knowledge about mangosteen cultivation, disease identification, and quality assessment through our comprehensive educational resources.
+            </p>
+            <div id="about-mangosteen-subsection" class="mb-12">
+                <h3 class="subsection-title font-bold text-center mb-6 text-purple-800 fade-in" style="transition-delay: 0.1s;">About Mangosteen</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="info-card fade-in">
+                        <div class="info-card-header">
+                            <i class="fas fa-book-open"></i>
+                            <h4 class="text-lg md:text-xl font-bold">Definition & History</h4>
+                        </div>
+                        <div class="info-card-body">
+                            <p class="text-gray-700">"Garciana Mangostana" or known as Mangosteen is a sweet tropical fruit native to Southeast Asia. Known as the "Queen of Fruits," that has been cultivated for centuries in the Malay Archipelago and the Philippines.</p>
+                        </div>
+                    </div>
+                    <div class="info-card fade-in" style="transition-delay: 0.1s;">
+                        <div class="info-card-header">
+                            <i class="fas fa-pills"></i>
+                            <h4 class="text-lg md:text-xl font-bold">Nutritional Value</h4>
+                        </div>
+                        <div class="info-card-body">
+                            <p class="text-gray-700">Rich in antioxidants called xanthones and provides anti-inflammatory benefits, Vitamin C, and fiber. It boosts immunity and improves skin health while being low in calories, also supports heart health by promoting better blood circulation.</p>
+                        </div>
+                    </div>
+                    <div class="info-card fade-in" style="transition-delay: 0.2s;">
+                        <div class="info-card-header">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <h4 class="text-lg md:text-xl font-bold">Commonly Found</h4>
+                        </div>
+                        <div class="info-card-body">
+                            <p class="text-gray-700">Globally found in Thailand, Indonesia, Malaysia, and India. In the Philippines, it is abundant in Mindanao (Davao, Sulu, Zamboanga, Cotabato, Agusan) and cultivated in Luzon areas like Mindoro, Laguna, Quezon, and Cavite.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div id="classifications-subsection" class="mb-12">
+                <h3 class="subsection-title font-bold text-center mb-6 text-purple-800 fade-in" style="transition-delay: 0.3s;">Know Your Mangosteen Quality</h3>
+                <div class="text-center mb-8 fade-in" style="transition-delay: 0.4s;">
+                    <p class="text-gray-600 max-w-3xl mx-auto text-lg">
+                        Learn about the different quality classifications of mangosteen – plus how to identify and sort them effectively.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+                    <div class="classification-card fade-in" style="border-left-color: #e53e3e;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/ant.png') }}" alt="Anthracnose" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">ANTHRACNOSE</h5>
+                                <p class="classification-description">Fungal infection causing dark lesions and fruit rot.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.1s; border-left-color: #dd6b20;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/dry.png') }}" alt="Dry" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">DRY</h5>
+                                <p class="classification-description">Dehydrated fruit with wrinkled skin and hard texture.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.3s; border-left-color: #d69e2e;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/gummosis.png') }}" alt="Gummosis" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">GUMMOSIS</h5>
+                                <p class="classification-description">Secretion of gummy substances from the fruit surface.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.4s; border-left-color: #d69e2e;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/half ripe.png') }}" alt="Half Ripe" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">HALF RIPE</h5>
+                                <p class="classification-description">Fruit with uneven ripening characteristics.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.8s; border-left-color: #d53f8c;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/insect.png') }}" alt="Insect Damage" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">INSECT DAMAGE</h5>
+                                <p class="classification-description">Holes or markings caused by various pests.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.6s; border-left-color: #3182ce;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/raw.png') }}" alt="Raw" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">RAW</h5>
+                                <p class="classification-description">Immature fruit harvested too early.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.2s; border-left-color: #38a169;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/ripe.png') }}" alt="Ripe" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">RIPE</h5>
+                                <p class="classification-description">Perfect condition fruit with smooth, unblemished skin.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.7s; border-left-color: #718096;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/rot.png') }}" alt="Rot" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">ROT</h5>
+                                <p class="classification-description">Decaying fruit tissue with discolored areas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="classification-card fade-in" style="transition-delay: 0.5s; border-left-color: #805ad5;">
+                        <div class="flex items-start space-x-4">
+                            <div class="classification-image-container flex-shrink-0">
+                                <img src="{{ url_for('static', filename='assets/img/over ripe.png') }}" alt="Over Ripe" class="classification-image">
+                            </div>
+                            <div class="classification-content">
+                                <h5 class="classification-title">OVER RIPE</h5>
+                                <p class="classification-description">Excessively mature fruit with reduced shelf life.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+
+                <div id="videos-subsection">
+                    <h3 class="subsection-title font-bold text-center mb-6 text-purple-800 fade-in" style="transition-delay: 0.4s;">Video Resources</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="video-card fade-in" data-video-id="Sw2QgvMxDvw">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/Sw2QgvMxDvw/hqdefault.jpg" alt="Mangosteen Farming Guide">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Farming Guide</h4>
+                                <p class="text-gray-700">Learn proper techniques for cultivating mangosteen trees.</p>
+                            </div>
+                        </div>
+                        <div class="video-card fade-in" data-video-id="FKh-gVm0QT0" style="transition-delay: 0.1s;">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/FKh-gVm0QT0/hqdefault.jpg" alt="Mangosteen Planting Guide">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Planting Guide</h4>
+                                <p class="text-gray-700">How to properly plant and establish mangosteen trees.</p>
+                            </div>
+                        </div>
+                        <div class="video-card fade-in" data-video-id="sTBkpA6ZJ9Y" style="transition-delay: 0.2s;">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/sTBkpA6ZJ9Y/hqdefault.jpg" alt="Mangosteen Care Guide">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Care Guide</h4>
+                                <p class="text-gray-700">Essential care tips for healthy mangosteen trees.</p>
+                            </div>
+                        </div>
+                        <div class="video-card fade-in" data-video-id="ToxSIrqDH0E" style="transition-delay: 0.3s;">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/ToxSIrqDH0E/hqdefault.jpg" alt="Mangosteen Health Benefits">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Health Benefits</h4>
+                                <p class="text-gray-700">Discover the amazing health benefits of mangosteen fruits.</p>
+                            </div>
+                        </div>
+                        <div class="video-card fade-in" data-video-id="LXUotWyDu9U" style="transition-delay: 0.4s;">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/LXUotWyDu9U/hqdefault.jpg" alt="Mangosteen Uses">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Uses & Products</h4>
+                                <p class="text-gray-700">Creative ways to use mangosteen and products you can make.</p>
+                            </div>
+                        </div>
+                        <div class="video-card fade-in" data-video-id="5c63lOrzLEI" style="transition-delay: 0.5s;">
+                            <div class="video-thumbnail">
+                                <img src="https://i.ytimg.com/vi/5c63lOrzLEI/hqdefault.jpg" alt="Mangosteen Quality Assessment">
+                                <div class="play-icon"><i class="fas fa-play-circle"></i></div>
+                            </div>
+                            <div class="info-card-body">
+                                <h4 class="text-lg md:text-xl font-bold mb-2">Mangosteen Quality Guide</h4>
+                                <p class="text-gray-700">How to identify high-quality mangosteen fruits.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="about-us" class="section">
+        <div class="container">
+            <h2 class="section-title fade-in">About Us</h2>
+            <p class="section-description fade-in">
+                Learn about our mission, vision, and the dedicated team behind MANGOSQUEEN - committed to revolutionizing mangosteen agriculture through technology and innovation.
+            </p>
+            <div id="mission-vision" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12">
+                <div class="mission-vision-card fade-in" style="border-left: 5px solid var(--primary-color);">
+                    <h3 class="text-2xl md:text-3xl font-extrabold text-purple-700 mb-4 flex items-center"><i class="fas fa-bullseye mr-3 text-purple-500"></i> Mission</h3>
+                    <p class="text-gray-700 text-base md:text-lg">To revolutionize mangosteen farming by providing intelligent disease detection, precise treatment recommendations, and efficient sorting technology to empower farmers and ensure the fruit's longevity and quality.</p>
+                </div>
+                <div class="mission-vision-card fade-in" style="transition-delay: 0.1s; border-left: 5px solid var(--secondary-color);">
+                    <h3 class="text-2xl md:text-3xl font-extrabold text-purple-700 mb-4 flex items-center"><i class="fas fa-eye mr-3 text-purple-500"></i> Vision</h3>
+                    <p class="text-gray-700 text-base md:text-lg">To be the leading technological platform in mangosteen agriculture, recognized globally for innovation, sustainability, and dedication to enhancing farmer productivity and fruit quality.</p>
+                </div>
+            </div>
+            
+            <div class="divider my-8 md:my-10"></div>
+            
+            <div id="institution-college" class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-12 md:mb-16">
+                <div class="institution-card fade-in" style="transition-delay: 0.2s;">
+                    <div class="institution-header">
+                        <div class="institution-logo">
+                            <img src="static/assets/img/msu.png" alt="Mindoro State University Logo">
+                        </div>
+                        <h3 class="text-xl md:text-2xl font-bold mb-3">Academic Institution</h3>
+                    </div>
+                    <div class="institution-body">
+                        <h4 class="text-2xl md:text-3xl font-extrabold text-purple-800 mb-3">MINDORO STATE UNIVERSITY</h4>
+                        <p class="text-gray-700 mb-3">A premier state university in Oriental Mindoro committed to academic excellence, research, and community development.</p>
+                    </div>
+                </div>
+                <div class="institution-card fade-in" style="transition-delay: 0.3s;">
+                    <div class="institution-header">
+                        <div class="institution-logo">
+                            <img src="static/assets/img/ccs.png" alt="College of Computer Studies Logo">
+                        </div>
+                        <h3 class="text-xl md:text-2xl font-bold mb-3">Host College</h3>
+                    </div>
+                    <div class="institution-body">
+                        <h4 class="text-2xl md:text-3xl font-extrabold text-purple-800 mb-3">COLLEGE OF COMPUTER STUDIES</h4>
+                        <p class="text-gray-700 mb-3">Leading the digital transformation through innovative computer education, research, and technological solutions.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <h3 class="developers-title font-bold text-center mb-6 md:mb-8 text-purple-800 fade-in" style="transition-delay: 0.4s;">MEET THE DEVELOPERS TEAM</h3>
+            <p class="section-description fade-in" style="margin-bottom: 3rem;">
+                Our dedicated team of developers and technical experts working together to bring innovative solutions to mangosteen farmers.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <div class="developer-card fade-in">
+                    <img src="{{ url_for('static', filename='assets/img/d2.jpg') }}" alt="Developer 1" class="developer-img">
+                    <h4 class="text-lg md:text-xl font-bold mb-2">JHON CARLO JIMENEZ</h4>
+                    <p class="text-purple-600 font-semibold">Programmer</p>
+                    <p class="developer-quote">"Transforming agricultural challenges into technological solutions."</p>
+                    <div class="developer-social">
+                        <a href="https://www.facebook.com/kly.njz" target="_blank">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="mailto:jhoncarlo@gmail.com" target="_blank">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="developer-card fade-in" style="transition-delay: 0.1s;">
+                    <img src="{{ url_for('static', filename='assets/img/d1.jpg') }}" alt="Developer 2" class="developer-img">
+                    <h4 class="text-lg md:text-xl font-bold mb-2">IRISH KATE ANDAYA</h4>
+                    <p class="text-purple-600 font-semibold">Lead Developer / Programmer</p>
+                    <p class="developer-quote">"Leading innovation in agricultural technology with passion and precision."</p>
+                    <div class="developer-social">
+                        <a href="https://www.facebook.com/irisshhh.ndy" target="_blank">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="mailto:andayrishkate11@gmail.com" target="_blank">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="developer-card fade-in" style="transition-delay: 0.2s;">
+                    <img src="{{ url_for('static', filename='assets/img/p3.png') }}" alt="Developer 3" class="developer-img">
+                    <h4 class="text-lg md:text-xl font-bold mb-2">HURIECANE IVAN GANIO</h4>
+                    <p class="text-purple-600 font-semibold">Technical Writer</p>
+                    <p class="developer-quote">"Bridging technology and agriculture through clear communication and documentation."</p>
+                    <div class="developer-social">
+                        <a href="https://www.facebook.com/huriecane.ganio" target="_blank">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="mailto:ganiohurie@.com" target="_blank">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#home" class="footer-brand-title">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="h-8 w-8 object-contain">
+                        MANGOSQUEEN
+                    </a>
+                    <p class="footer-brand-desc">
+                        An AI-Powered system to support farmers in mangosteen fruit disease detection, with smart prevention, and automated sorting solutions.
+                    </p>
+                    <div class="footer-social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-links-group">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links-list">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#about-us">About Us</a></li>
+                        <li><a href="#services">Features</a></li>
+                        <li><a href="#learnings">Learnings</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-contact-group">
+                    <h4>Contact Us</h4>
+                    <ul class="footer-contact-list">
+                        <li>
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Victoria, Oriental Mindoro, Philippines</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-phone-alt"></i>
+                            <span>+63 975 5039 825</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            <span>info@mangosqueen.com</span>
+                        </li>
+                    </ul>
+                    <a href="mailto:mangosqueenteam@gmail.com" class="contact-btn-small">
+                        <i class="fas fa-envelope me-2"></i>Contact Us
+                    </a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom-row">
+                <p>&copy; 2025 MANGOSQUEEN. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <a href="#home" class="scroll-top">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-dismiss logic for the logout message
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutMsg = document.querySelector('.logout-message');
+            if(logoutMsg) {
+                setTimeout(() => {
+                    logoutMsg.style.opacity = '0';
+                    logoutMsg.style.transform = 'translateY(-10px)';
+                    setTimeout(() => logoutMsg.remove(), 500);
+                }, 3000);
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY > 10) {
+                        logoutMsg.style.opacity = '0';
+                        setTimeout(() => logoutMsg.remove(), 300);
+                    }
+                }, { once: true });
+            }
+        });
+
+        const scrollOffset = 100;
+        const landingPage = document.getElementById('home');
+        const navbar = document.getElementById('navbar');
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        function typeTagline(text) {
+            let i = 0;
+            const tagline = document.getElementById('tagline');
+            const buttonContainer = document.getElementById('button-container');
+            const loginBtn = document.getElementById('login-btn');
+            const learnMoreBtn = document.getElementById('learn-more-btn');
+            tagline.textContent = '';
+
+            const typingInterval = setInterval(() => {
+                if (i < text.length) {
+                    tagline.textContent += text.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typingInterval);
+                    setTimeout(() => {
+                        buttonContainer.style.opacity = 1;
+                        buttonContainer.style.transform = 'translateY(0)';
+                        loginBtn.style.opacity = 1;
+                        loginBtn.style.transform = 'translateY(0)';
+                        learnMoreBtn.style.opacity = 1;
+                        learnMoreBtn.style.transform = 'translateY(0)';
+                    }, 100);
+                }
+            }, 25);
+        }
+
+        function setupLandingAnimations() {
+            const title = document.querySelector('.welcome-title');
+            const tagline = document.getElementById('tagline');
+            const taglineText = "Your Companion for Smarter Mangosteen Fruit Disease Detection with Advanced AI-powered solution.";
+
+            title.style.opacity = 0;
+            title.style.transform = 'translateY(20px)';
+            tagline.style.opacity = 0;
+            tagline.textContent = '';
+
+            setTimeout(() => {
+                title.style.opacity = 1;
+                title.style.transform = 'translateY(0)';
+                title.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            }, 100);
+
+            setTimeout(() => {
+                tagline.style.opacity = 1;
+                typeTagline(taglineText);
+            }, 200);
+        }
+
+        function setupScrollAnimations() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // Optional: Keep elements visible once shown to prevent flickering
+                        // entry.target.classList.remove('visible'); 
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            fadeElements.forEach(element => {
+                observer.observe(element);
+            });
+        }
+
+        function handleScroll() {
+            const scrollPosition = window.scrollY;
+            const landingPageHeight = landingPage.offsetHeight - navbar.offsetHeight;
+
+            if (scrollPosition > landingPageHeight) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+
+            const scrollButton = document.querySelector('.scroll-top');
+            if (scrollPosition > 500) {
+                scrollButton.classList.add('visible');
+            } else {
+                scrollButton.classList.remove('visible');
+            }
+        }
+
+        function setupVideoCards() {
+            const videoCards = document.querySelectorAll('.video-card');
+            videoCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const videoId = card.getAttribute('data-video-id');
+                    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+                });
+            });
+        }
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenuButton.classList.toggle('open');
+            mobileMenu.classList.toggle('active');
+        });
+
+        function closeMobileMenu() {
+            mobileMenuButton.classList.remove('open');
+            mobileMenu.classList.remove('active');
+        }
+
+        function setupSmoothScroll() {
+            const navLinks = document.querySelectorAll('a[href^="#"]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#' || targetId === '') return;
+                    e.preventDefault();
+
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        const offset = 80;
+                        const targetPosition = targetElement.offsetTop - offset;
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                        closeMobileMenu();
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('navbar-logo').style.opacity = 1;
+            setupLandingAnimations();
+            setupScrollAnimations();
+            setupVideoCards();
+            setupSmoothScroll();
+
+            window.addEventListener('scroll', handleScroll);
+            handleScroll();
+        });
+    </script>
+</body>
+</html>

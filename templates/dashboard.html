@@ -1,0 +1,1654 @@
+{% extends "base.html" %}
+
+{% block title %}
+MANGOSQUEEN - Dashboard
+{% endblock %}
+
+{% block content %}
+
+<style>
+  /* Smooth page load transition */
+  body {
+    animation: pageLoadFade 0.2s ease-in;
+  }
+
+  @keyframes pageLoadFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* --- ADDED: Styles for the Login Success Message (Top Right, Purple Gradient) --- */
+  .login-success-message {
+      position: fixed;
+      top: 90px; /* Adjusted to sit below fixed navbar */
+      right: 25px;
+      z-index: 9999; /* Highest z-index to sit on top */
+      background: linear-gradient(135deg, #c2b0eb, #9072d4);
+      color: black;
+      padding: 10px 20px;
+      border-radius: 30px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      transform: translateX(100px);
+      opacity: 0;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      white-space: nowrap;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      text-transform: none;
+  }
+
+  @keyframes slideInRight {
+      to { transform: translateX(0); opacity: 1; }
+  }
+  
+  @media (max-width: 640px) {
+      .login-success-message {
+          top: 80px;
+          right: 15px;
+          padding: 8px 14px;
+          font-size: 12px;
+      }
+  }
+  /* ------------------------------------------------------------------------- */
+
+  /* --- DASHBOARD HERO SECTION STYLES --- */
+  .dashboard-hero {
+    background-image: url("{{ url_for('static', filename='images/background.png') }}");
+    background-size: cover;
+    background-position: center;
+    height: 70vh;
+    min-height: 500px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .dashboard-hero::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(39, 39, 39, 0.5);
+    z-index: 1;
+  }
+
+  .hero-overlay {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    box-sizing: border-box;
+    padding: 2rem;
+  }
+
+  .hero-content {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .dashboard-title {
+    font-size: clamp(2rem, 10vw, 7rem);
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    font-family: 'Coco Gothic', 'Segoe UI', Impact, sans-serif;
+    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 0 5px #000, 0 0 10px #000;
+    letter-spacing: clamp(0.1rem, 1.5vw, 0.7rem);
+    margin: 0 0 1rem 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+
+  .dashboard-title span {
+    display: inline-block;
+    animation: waveLetter 2.5s infinite ease-in-out;
+  }
+
+  .dashboard-title span:nth-child(odd) {
+    animation-delay: 0.1s;
+  }
+
+  .dashboard-title span:nth-child(even) {
+    animation-delay: 0.3s;
+  }
+
+  .dashboard-sub {
+    font-size: clamp(0.9rem, 2vw, 1.5rem);
+    font-weight: 500;
+    color: rgb(228, 223, 223);
+    font-family: 'Copperplate Gothic 29 BC', 'Arial', sans-serif;
+    margin: 0 0 clamp(2rem, 6vw, 5rem) 0;
+    animation: fadeInOut 5s ease-in-out infinite;
+    white-space: normal;
+    padding: 0 5px;
+    line-height: 1.5;
+  }
+
+  .scan-btn {
+    background-color: #a020f0;
+    color: white;
+    font-size: clamp(1rem, 4vw, 2rem);
+    font-weight: bold;
+    padding: 0.8rem 2rem;
+    border-radius: 15px;
+    text-decoration: none;
+    border: 2px solid white;
+    transition: 0.3s ease;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .scan-btn:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #a020f0;
+    border: 2px solid black;
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  @keyframes waveLetter {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 1;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  /* --- STATS & GENERAL DASHBOARD CSS --- */
+  body.modal-open {
+    overflow: hidden !important;
+  }
+
+  #dashboardFlash {
+    margin-top: 90px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 9999;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .filter-card-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+  }
+
+  .filter-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #4b5563;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .custom-select,
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    padding: 10px 12px;
+    height: 42px;
+  }
+
+  .custom-input-group .form-control {
+    border-right: none;
+  }
+
+  .custom-input-group .input-group-text {
+    background: white;
+    border-left: none;
+    border-right: none;
+    color: #6b7280;
+    font-size: 13px;
+  }
+
+  .custom-input-group .btn-check-date {
+    border: 1px solid #d1d5db;
+    border-left: none;
+    background: white;
+    color: #10b981;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    padding: 0 12px;
+  }
+
+  .custom-input-group .btn-check-date:hover {
+    background: #f0fdf4;
+  }
+
+  .btn-outline-purple {
+    color: #764ba2;
+    border: 1px solid #764ba2;
+    font-size: 14px;
+  }
+
+  .btn-outline-purple:hover {
+    background: #764ba2;
+    color: white;
+  }
+
+  .btn-reset-grey {
+    background: #6b7280;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-reset-grey:hover {
+    background: #4b5563;
+  }
+
+  .dashboard-stats {
+    padding: 35px 0;
+    background-color: #f8f9fa;
+  }
+
+  .section-title {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #2c3e50;
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+    height: 100%;
+    margin-bottom: 15px;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(102, 126, 234, 0.15);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    font-size: 24px;
+    color: white;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+  }
+
+  .total-images .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .disease-count .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .common-disease .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .stat-content {
+    text-align: left;
+  }
+
+  .stat-content h3 {
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 800;
+    margin: 0;
+    color: #2d3748;
+    line-height: 1.2;
+  }
+
+  .stat-content p {
+    margin: 5px 0 0;
+    color: #718096;
+    font-weight: 500;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .graph-container {
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    height: 400px;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.02);
+  }
+
+  .pie-chart-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .view-history-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 50px;
+    transition: all 0.4s ease;
+    box-shadow: 0 10px 25px rgba(118, 75, 162, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .view-history-btn:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(118, 75, 162, 0.4);
+  }
+
+  /* --- MODAL CSS --- */
+  .enhanced-modal {
+    border-radius: 24px;
+    border: none;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .enhanced-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 32px;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-icon {
+    font-size: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 16px;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-title {
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 2px;
+  }
+
+  .modal-subtitle {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
+    font-weight: 300;
+  }
+
+  .enhanced-close {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    opacity: 1;
+    color: white;
+    transition: all 0.2s;
+  }
+
+  .enhanced-close:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    transform: rotate(90deg);
+  }
+
+  .enhanced-body {
+    padding: 24px;
+    background: #f8fafc;
+    padding-bottom: 30px;
+  }
+
+  .table-section {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+
+  .fixed-height-table {
+    height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .fixed-height-table::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .fixed-height-table::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  .fixed-height-table::-webkit-scrollbar-thumb {
+    background: #c4b5fd;
+    border-radius: 4px;
+  }
+
+  .enhanced-table {
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .enhanced-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #475569;
+    font-size: 13px;
+    padding: 16px 24px;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .enhanced-table td {
+    padding: 16px 24px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+  }
+
+  .prediction-badge {
+    padding: 4px 10px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .no-data-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 20px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .empty-state-container {
+    text-align: center;
+  }
+
+  .empty-icon-bg {
+    width: 80px;
+    height: 80px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: #9ca3af;
+    font-size: 32px;
+  }
+
+  .empty-state-container h4 {
+    color: #374151;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .empty-state-container p {
+    color: #6b7280;
+  }
+
+  .pagination-footer {
+    padding: 16px 24px;
+    background: #fff;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  /* --- RESPONSIVE STYLES --- */
+  @media (max-width: 480px) {
+    .hero-overlay {
+      padding: 1rem;
+    }
+
+    .dashboard-title {
+      font-size: 13vw;
+    }
+
+    .dashboard-sub {
+      margin-bottom: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .enhanced-header {
+      padding: 16px;
+    }
+
+    .modal-body {
+      padding: 16px;
+    }
+
+    .enhanced-table th,
+    .enhanced-table td {
+      padding: 12px 16px;
+    }
+
+    .pagination-footer {
+      padding: 12px 16px;
+    }
+
+    .pie-chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 450px !important;
+    }
+
+    .graph-container {
+      height: 450px;
+    }
+
+    .stat-card {
+      padding: 16px;
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 20px;
+      margin-right: 12px;
+    }
+
+    .stat-content h3 {
+      font-size: 18px;
+    }
+
+    .stat-content p {
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 1024px) and (min-width: 769px) {
+    .pie-chart-container {
+      height: 420px;
+    }
+
+    .graph-container {
+      height: 420px;
+    }
+
+    .stat-card {
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+
+    .stat-icon {
+      width: 55px;
+      height: 55px;
+      font-size: 22px;
+      margin-right: 14px;
+    }
+
+    .stat-content h3 {
+      font-size: 22px;
+    }
+
+    .stat-content p {
+      font-size: 12px;
+    }
+  }
+
+  @media (min-width: 1025px) {
+    .stat-card {
+      padding: 25px;
+    }
+
+    .stat-icon {
+      width: 70px;
+      height: 70px;
+      font-size: 28px;
+      margin-right: 20px;
+    }
+
+    .stat-content h3 {
+      font-size: 28px;
+    }
+
+    .stat-content p {
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 991px) {
+    .modal-fullscreen-lg-down {
+      width: 100vw;
+      max-width: none;
+      height: 100%;
+      margin: 0;
+    }
+
+    .modal-fullscreen-lg-down .modal-content {
+      height: 100%;
+      border-radius: 0;
+    }
+
+    .modal-fullscreen-lg-down .enhanced-header {
+      border-radius: 0;
+    }
+  }
+</style>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            
+            {# FIXED: Checks case-insensitively using .lower() #}
+            {% if "logged in successfully" in message.lower() %}
+            <div class="login-success-message">
+                <i class="fas fa-check-circle text-purple-900"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endif %}
+            
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<section class="dashboard-hero" id="section1">
+  <div class="hero-overlay">
+    <div class="hero-content">
+      <h1 class="dashboard-title">
+        <span>W</span><span>E</span><span>L</span><span>C</span><span>O</span><span>M</span><span>E</span>
+      </h1>
+      <p class="dashboard-sub">i-Scan at Alamin: Mangosteen Mo, Protektado at Bunga'y Sigurado!</p>
+      <a href="{{ url_for('scan') }}" class="scan-btn">SCAN</a>
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-stats" id="section2">
+  <div class="container-fluid px-lg-5">
+    <h2 class="section-title">DASHBOARD OVERVIEW</h2>
+
+    <div class="row mb-4 g-3 justify-content-center">
+      <div class="col-12 col-md-12 col-lg-4">
+        <div class="stat-card total-images">
+          <div class="stat-icon">
+            <i class="fas fa-images"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="totalImages">0</h3>
+            <p>Total Uploaded Images</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-12 col-lg-4">
+        <div class="stat-card disease-count">
+          <div class="stat-icon">
+            <i class="fas fa-bug"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="totalDiseases">0</h3>
+            <p>Overall Disease Counts</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-12 col-lg-4">
+        <div class="stat-card common-disease">
+          <div class="stat-icon">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="stat-content">
+            <h3 id="mostCommonDisease">-</h3>
+            <p>Most Predicted Disease</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-card-container mb-5">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-lg-3">
+          <label class="filter-label">
+            <i class="fas fa-filter"></i> Class
+          </label>
+          <select id="dashDiseaseFilter" class="form-select custom-select">
+            <option value="all">All Classes</option>
+            <option value="Anthracnose">Anthracnose</option>
+            <option value="Dry">Dry</option>
+            <option value="Gummosis">Gummosis</option>
+            <option value="Half Ripe">Half Ripe</option>
+            <option value="Insect Damage">Insect Damage</option>
+            <option value="Raw">Raw</option>
+            <option value="Ripe">Ripe</option>
+            <option value="Rot">Rot</option>
+            <option value="Over Ripe">Over Ripe</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-lg-5">
+          <label class="filter-label">
+            <i class="fas fa-calendar-alt"></i> Date Range
+          </label>
+          <div class="input-group custom-input-group">
+            <input type="date" id="dashStartDate" class="form-control">
+            <span class="input-group-text">to</span>
+            <input type="date" id="dashEndDate" class="form-control">
+            <button class="btn btn-check-date" type="button" onclick="applyDashboardFilters()">
+              <i class="fas fa-check"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-4">
+          <label class="filter-label">Quick Filters</label>
+          <div class="d-flex flex-wrap gap-2">
+            <div class="btn-group flex-grow-1">
+              <button class="btn btn-outline-purple" onclick="applyDashQuickFilter('today')">Today</button>
+              <button class="btn btn-outline-purple" onclick="applyDashQuickFilter('month')">Month</button>
+              <button class="btn btn-outline-purple" onclick="applyDashQuickFilter('year')">Year</button>
+            </div>
+            <button class="btn btn-reset-grey" id="dashResetBtn" title="Reset">
+              <i class="fas fa-undo"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-5 g-4">
+      <div class="col-12 col-lg-7">
+        <div class="graph-container">
+          <canvas id="diseaseBarGraph"></canvas>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="graph-container pie-chart-container">
+          <canvas id="fruitPieChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center mb-5">
+      <button class="btn btn-primary btn-lg view-history-btn glow-effect" data-bs-toggle="modal" data-bs-target="#historyModal">
+        <span class="icon-wrapper">
+          <i class="fas fa-history"></i>
+        </span>
+        <span>View Detection History</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-lg-down modal-dialog-centered">
+    <div class="modal-content enhanced-modal">
+      <div class="modal-header enhanced-header">
+        <div class="header-content">
+          <i class="fas fa-history header-icon"></i>
+          <div class="d-flex flex-column">
+            <h5 class="modal-title" id="historyModalLabel">Detection History</h5>
+            <p class="modal-subtitle">Comprehensive analysis of scanned data</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close enhanced-close" data-bs-dismiss="modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="modal-body enhanced-body">
+        <div class="filter-card-container mb-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-lg-3">
+              <label class="filter-label">
+                <i class="fas fa-filter"></i> Class
+              </label>
+              <select id="modalDiseaseFilter" class="form-select custom-select">
+                <option value="all">All Types</option>
+                <option value="Anthracnose">Anthracnose</option>
+                <option value="Dry">Dry</option>
+                <option value="Gummosis">Gummosis</option>
+                <option value="Half Ripe">Half Ripe</option>
+                <option value="Insect Damage">Insect Damage</option>
+                <option value="Raw">Raw</option>
+                <option value="Ripe">Ripe</option>
+                <option value="Rot">Rot</option>
+                <option value="Over Ripe">Over Ripe</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-lg-5">
+              <label class="filter-label">
+                <i class="fas fa-calendar-alt"></i> Date Range
+              </label>
+              <div class="input-group custom-input-group">
+                <input type="date" id="modalStartDate" class="form-control">
+                <span class="input-group-text">to</span>
+                <input type="date" id="modalEndDate" class="form-control">
+                <button class="btn btn-check-date" id="applyModalFilterBtn" type="button" title="Apply Date">
+                  <i class="fas fa-check"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+              <label class="filter-label">Quick Filters</label>
+              <div class="d-flex flex-wrap gap-2">
+                <div class="btn-group flex-grow-1">
+                  <button type="button" class="btn btn-outline-purple" onclick="setModalQuickFilter('today')">Today</button>
+                  <button type="button" class="btn btn-outline-purple" onclick="setModalQuickFilter('month')">Month</button>
+                  <button type="button" class="btn btn-outline-purple" onclick="setModalQuickFilter('year')">Year</button>
+                </div>
+                <button class="btn btn-reset-grey" id="resetModalFilterBtn" title="Reset">
+                  <i class="fas fa-undo"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3 pt-3 border-top">
+            <div class="col-12 d-flex flex-wrap justify-content-end gap-2">
+              <button id="printReportBtn" class="btn btn-info text-white btn-sm flex-grow-1 flex-md-grow-0">
+                <i class="fas fa-print me-1"></i> Print
+              </button>
+              <button id="wordReportBtn" class="btn btn-primary text-white btn-sm flex-grow-1 flex-md-grow-0">
+                <i class="fas fa-file-word me-1"></i> Word
+              </button>
+              <button id="downloadReportBtn" class="btn btn-warning text-white btn-sm flex-grow-1 flex-md-grow-0">
+                <i class="fas fa-download me-1"></i> CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-responsive fixed-height-table">
+            <table id="historyTable" class="enhanced-table">
+              <thead>
+                <tr>
+                  <th style="min-width: 150px;">
+                    <i class="fas fa-clock me-1"></i> Date-Time
+                  </th>
+                  <th style="min-width: 120px;">
+                    <i class="fas fa-file-image me-1"></i> File Name
+                  </th>
+                  <th style="min-width: 120px;">
+                    <i class="fas fa-microscope me-1"></i> Prediction
+                  </th>
+                  <th style="min-width: 100px;">
+                    <i class="fas fa-percentage me-1"></i> Confidence
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+
+            <div id="noHistoryData" class="no-data-display" style="display: none;">
+              <div class="empty-state-container">
+                <div class="empty-icon-bg">
+                  <i class="fas fa-folder-open"></i>
+                </div>
+                <h4>No Data Found</h4>
+                <p>Try adjusting your filters or start scanning new images.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-footer">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 w-100">
+              <div class="text-muted small text-center text-md-start" id="showingRecordsText">
+                Showing 0 - 0 of 0 records
+              </div>
+              <div class="d-flex align-items-center justify-content-center gap-2">
+                <select id="rowsPerPage" class="form-select form-select-sm" style="width: 70px;" onchange="changeRowsPerPage()">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                </select>
+                <button class="btn btn-outline-secondary btn-sm" id="prevPageBtn" onclick="changePage(-1)" disabled>
+                  Prev
+                </button>
+                <span id="pageCounterText" class="text-muted small mx-1">1/1</span>
+                <button class="btn btn-outline-secondary btn-sm" id="nextPageBtn" onclick="changePage(1)" disabled>
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // --- ADDED: Auto-dismiss logic for the login success message ---
+    const loginMsg = document.querySelector('.login-success-message');
+    if(loginMsg) {
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            loginMsg.style.opacity = '0';
+            loginMsg.style.transform = 'translateY(-10px)';
+            setTimeout(() => loginMsg.remove(), 500);
+        }, 3000);
+        
+        // Immediate dismiss on scroll
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                loginMsg.style.opacity = '0';
+                setTimeout(() => loginMsg.remove(), 300);
+            }
+        }, { once: true });
+    }
+    // --------------------------------------------------------------
+
+    // Chart contexts
+    const diseaseChartCtx = document.getElementById('diseaseBarGraph').getContext('2d');
+    const pieChartCtx = document.getElementById('fruitPieChart').getContext('2d');
+    const currentUsername = "{{ session.get('username', '') }}";
+
+    // ... (All existing JS logic for charts/modal/history remains unchanged below) ...
+    // ...
+    let diseaseChart;
+    let pieChart;
+    let rawData = [];
+    let dashboardData = [];
+    let modalData = [];
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
+    const classColors = {
+      'Anthracnose': '#E57373',
+      'Dry': '#A1887F',
+      'Gummosis': '#FBC02D',
+      'Half Ripe': '#FFB74D',
+      'Insect Damage': '#BA68C8',
+      'Raw': '#4DB6AC',
+      'Ripe': '#81C784',
+      'Rot': '#616161',
+      'Over Ripe': '#7986CB'
+    };
+
+    const allowedClasses = [
+      'Anthracnose', 'Dry', 'Gummosis', 'Half Ripe',
+      'Insect Damage', 'Raw', 'Ripe', 'Rot', 'Over Ripe'
+    ];
+
+    function normalizeType(type) {
+      if (!type) return null;
+      const lower = type.toLowerCase();
+      if (lower.includes('dry')) return 'Dry';
+      if (lower.includes('healthy') || lower === 'ripe') return 'Ripe';
+      if (lower.includes('insect')) return 'Insect Damage';
+      if (allowedClasses.includes(type)) return type;
+      const found = allowedClasses.find(c => c.toLowerCase() === lower);
+      return found ? found : null;
+    }
+
+    initDashboard();
+
+    async function initDashboard() {
+      await loadDiseaseData();
+      setupDashboardListeners();
+      setupModalListeners();
+    }
+
+    async function loadDiseaseData() {
+      try {
+        const response = await fetch(`/api/disease-data?username=${currentUsername}`);
+        const data = await response.json();
+        if (data.error) return;
+
+        rawData = (data.history || []).sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+        dashboardData = [...rawData];
+        modalData = [...rawData];
+
+        updateDashboardUI();
+        updateModalUI();
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      }
+    }
+
+    function updateDashboardUI() {
+      updateStatistics(dashboardData);
+      generateCharts(dashboardData);
+    }
+
+    function updateStatistics(data) {
+      const validData = data.filter(item => normalizeType(item.diseaseType) !== null);
+
+      document.getElementById('totalImages').textContent = data.length;
+      document.getElementById('totalDiseases').textContent = validData.length;
+
+      const counts = {};
+      validData.forEach(item => {
+        const t = normalizeType(item.diseaseType);
+        counts[t] = (counts[t] || 0) + 1;
+      });
+
+      let mostCommon = '-';
+      let max = 0;
+      for (const [k, v] of Object.entries(counts)) {
+        if (v > max) {
+          max = v;
+          mostCommon = k;
+        }
+      }
+
+      document.getElementById('mostCommonDisease').textContent = mostCommon;
+    }
+
+    function generateCharts(data) {
+      const chartCounts = {};
+      allowedClasses.forEach(cls => chartCounts[cls] = 0);
+
+      data.forEach(item => {
+        const type = normalizeType(item.diseaseType);
+        if (type && chartCounts.hasOwnProperty(type)) chartCounts[type]++;
+      });
+
+      const labels = Object.keys(chartCounts);
+      const values = Object.values(chartCounts);
+      const bgColors = labels.map(l => classColors[l] || '#e0e0e0');
+
+      if (diseaseChart) diseaseChart.destroy();
+
+      diseaseChart = new Chart(diseaseChartCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Count',
+            data: values,
+            backgroundColor: bgColors,
+            borderRadius: 4,
+            barPercentage: 0.65
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Disease Frequency' }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+
+      if (pieChart) pieChart.destroy();
+
+      pieChart = new Chart(pieChartCtx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: bgColors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: { display: true, text: 'Fruit Distribution' },
+            legend: {
+              position: getLegendPosition(),
+              align: 'center',
+              labels: {
+                boxWidth: 12,
+                font: { size: getLegendFontSize(), family: "'Inter', sans-serif" },
+                color: '#555',
+                padding: 15,
+                usePointStyle: true
+              },
+              maxHeight: 200
+            }
+          },
+          layout: { padding: 10 }
+        }
+      });
+    }
+
+    function getLegendPosition() {
+      const width = window.innerWidth;
+      if (width <= 768) return 'bottom';
+      if (width <= 1024) return 'bottom';
+      return 'right';
+    }
+
+    function getLegendFontSize() {
+      const width = window.innerWidth;
+      if (width <= 480) return 9;
+      if (width <= 768) return 10;
+      if (width <= 1024) return 10;
+      return 11;
+    }
+
+    window.addEventListener('resize', () => {
+      if (pieChart) {
+        pieChart.options.plugins.legend.position = getLegendPosition();
+        pieChart.options.plugins.legend.labels.font.size = getLegendFontSize();
+        pieChart.update('resize');
+      }
+    });
+
+    function setupDashboardListeners() {
+      document.getElementById('dashDiseaseFilter').addEventListener('change', applyDashboardFilters);
+      document.getElementById('dashResetBtn').addEventListener('click', () => {
+        document.getElementById('dashDiseaseFilter').value = 'all';
+        document.getElementById('dashStartDate').value = '';
+        document.getElementById('dashEndDate').value = '';
+        dashboardData = [...rawData];
+        updateDashboardUI();
+      });
+    }
+
+    window.applyDashQuickFilter = function(type) {
+      const end = new Date();
+      const start = new Date();
+
+      if (type === 'today') {
+        start.setHours(0, 0, 0, 0);
+      } else if (type === 'month') {
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+      } else if (type === 'year') {
+        start.setMonth(0, 1);
+        start.setHours(0, 0, 0, 0);
+      }
+
+      document.getElementById('dashStartDate').value = start.toISOString().split('T')[0];
+      document.getElementById('dashEndDate').value = end.toISOString().split('T')[0];
+      applyDashboardFilters();
+    };
+
+    window.applyDashboardFilters = function() {
+      const typeFilter = document.getElementById('dashDiseaseFilter').value;
+      const startStr = document.getElementById('dashStartDate').value;
+      const endStr = document.getElementById('dashEndDate').value;
+
+      let filtered = [...rawData];
+
+      if (typeFilter !== 'all') {
+        filtered = filtered.filter(item => normalizeType(item.diseaseType) === typeFilter);
+      } else {
+        filtered = filtered.filter(item => normalizeType(item.diseaseType) !== null);
+      }
+
+      if (startStr && endStr) {
+        const start = new Date(startStr);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endStr);
+        end.setHours(23, 59, 59, 999);
+
+        filtered = filtered.filter(item => {
+          const d = new Date(item.dateTime);
+          return d >= start && d <= end;
+        });
+      }
+
+      dashboardData = filtered;
+      updateDashboardUI();
+    };
+
+    function setupModalListeners() {
+      document.getElementById('modalDiseaseFilter').addEventListener('change', applyModalFilters);
+      document.getElementById('applyModalFilterBtn').addEventListener('click', applyModalFilters);
+      document.getElementById('resetModalFilterBtn').addEventListener('click', () => {
+        document.getElementById('modalDiseaseFilter').value = 'all';
+        document.getElementById('modalStartDate').value = '';
+        document.getElementById('modalEndDate').value = '';
+        modalData = [...rawData];
+        currentPage = 1;
+        updateModalUI();
+      });
+    }
+
+    window.setModalQuickFilter = function(type) {
+      const end = new Date();
+      const start = new Date();
+
+      if (type === 'today') {
+        start.setHours(0, 0, 0, 0);
+      } else if (type === 'month') {
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+      } else if (type === 'year') {
+        start.setMonth(0, 1);
+        start.setHours(0, 0, 0, 0);
+      }
+
+      document.getElementById('modalStartDate').value = start.toISOString().split('T')[0];
+      document.getElementById('modalEndDate').value = end.toISOString().split('T')[0];
+      applyModalFilters();
+    };
+
+    function applyModalFilters() {
+      const type = document.getElementById('modalDiseaseFilter').value;
+      const startStr = document.getElementById('modalStartDate').value;
+      const endStr = document.getElementById('modalEndDate').value;
+
+      let filtered = [...rawData];
+
+      if (type !== 'all') {
+        filtered = filtered.filter(item => normalizeType(item.diseaseType) === type);
+      }
+
+      if (startStr && endStr) {
+        const start = new Date(startStr);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endStr);
+        end.setHours(23, 59, 59, 999);
+
+        filtered = filtered.filter(item => {
+          const d = new Date(item.dateTime);
+          return d >= start && d <= end;
+        });
+      }
+
+      modalData = filtered;
+      currentPage = 1;
+      updateModalUI();
+    }
+
+    function updateModalUI() {
+      renderTable();
+    }
+
+    window.changeRowsPerPage = function() {
+      rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+      currentPage = 1;
+      renderTable();
+    };
+
+    window.changePage = function(delta) {
+      currentPage += delta;
+      renderTable();
+    };
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      const noData = document.getElementById('noHistoryData');
+
+      tbody.innerHTML = '';
+
+      if (modalData.length === 0) {
+        noData.style.display = 'flex';
+        updatePaginationUI(0);
+        return;
+      }
+
+      noData.style.display = 'none';
+
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = Math.min(startIndex + rowsPerPage, modalData.length);
+      const pageData = modalData.slice(startIndex, endIndex);
+
+      pageData.forEach(item => {
+        const normalized = normalizeType(item.diseaseType);
+        const badgeColor = normalized && classColors[normalized] ? classColors[normalized] : '#9E9E9E';
+        const badgeStyle = `background-color: ${badgeColor}20; color: ${badgeColor}; border: 1px solid ${badgeColor}40;`;
+
+        const row = `
+          <tr>
+            <td class="text-nowrap">${new Date(item.dateTime).toLocaleString()}</td>
+            <td>${item.filename}</td>
+            <td>
+              <span class="prediction-badge text-nowrap" style="${badgeStyle}">
+                ${item.diseaseType}
+              </span>
+            </td>
+            <td>${item.confidence}%</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+
+      updatePaginationUI(modalData.length, startIndex + 1, endIndex);
+    }
+
+    function updatePaginationUI(totalItems, start, end) {
+      const prevBtn = document.getElementById('prevPageBtn');
+      const nextBtn = document.getElementById('nextPageBtn');
+      const showingText = document.getElementById('showingRecordsText');
+      const pageCounter = document.getElementById('pageCounterText');
+
+      const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+
+      if (totalItems === 0) {
+        showingText.textContent = 'Showing 0 - 0 of 0 records';
+        pageCounter.textContent = `1/1`;
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      showingText.textContent = `Showing ${start} - ${end} of ${totalItems} records`;
+      pageCounter.textContent = `${currentPage}/${totalPages}`;
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    document.getElementById('printReportBtn').addEventListener('click', generatePrintReport);
+    document.getElementById('wordReportBtn').addEventListener('click', generateWordReport);
+    document.getElementById('downloadReportBtn').addEventListener('click', () => {
+      let csv = "Date,Filename,Prediction,Confidence\n";
+      modalData.forEach(row => {
+        const date = `"${new Date(row.dateTime).toLocaleString()}"`;
+        const file = `"${row.filename}"`;
+        const type = `"${row.diseaseType}"`;
+        const conf = `"${row.confidence}%"`;
+        csv += `${date},${file},${type},${conf}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "history.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    function getReportStats() {
+      const total = modalData.length;
+      const validData = modalData.filter(item => normalizeType(item.diseaseType) !== null);
+      const diseaseCount = validData.length;
+      const rate = total > 0 ? ((diseaseCount / total) * 100).toFixed(1) : 0;
+
+      const counts = {};
+      validData.forEach(item => {
+        const t = normalizeType(item.diseaseType);
+        counts[t] = (counts[t] || 0) + 1;
+      });
+
+      let mostCommon = 'None';
+      let max = 0;
+      for (const [k, v] of Object.entries(counts)) {
+        if (v > max) {
+          max = v;
+          mostCommon = k;
+        }
+      }
+
+      return { total, diseaseCount, rate, mostCommon };
+    }
+
+    function generatePrintReport() {
+      const { total, diseaseCount, rate, mostCommon } = getReportStats();
+      const logoUrl = "{{ url_for('static', filename='images/logo.png') }}";
+      const dateStr = new Date().toLocaleString();
+
+      let tableRows = '';
+      modalData.forEach((row) => {
+        tableRows += `
+          <tr>
+            <td>${row.filename}</td>
+            <td>${new Date(row.dateTime).toLocaleString()}</td>
+            <td>${row.diseaseType}</td>
+            <td>${row.confidence}%</td>
+          </tr>
+        `;
+      });
+
+      const printContent = `
+        <html>
+          <head>
+            <title>MANGOSQUEEN Report</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+              @page { margin: 20px; size: auto; }
+              body { font-family: 'Inter', sans-serif; margin: 20px; color: #333; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              .header { display: flex; align-items: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
+              .logo { width: 70px; height: 70px; margin-right: 20px; object-fit: contain; }
+              .title-box h1 { margin: 0; color: #667eea; font-size: 26px; font-weight: 800; text-transform: uppercase; }
+              .title-box p { margin: 4px 0 0; color: #666; font-size: 14px; }
+              .meta-info { margin-left: auto; text-align: right; font-size: 12px; color: #777; }
+              .summary-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 40px; }
+              .card { flex: 1; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; background: #f8fafc; }
+              .card-label { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+              .card-value { font-size: 22px; font-weight: 800; color: #4b5563; }
+              .highlight-text { color: #764ba2; }
+              h2 { font-size: 18px; color: #333; margin-bottom: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+              table { width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid #e2e8f0; }
+              th { background-color: #805ad5 !important; color: #ffffff !important; padding: 12px; text-align: left; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+              td { border-bottom: 1px solid #f1f5f9; padding: 12px; color: #475569; }
+              tr:nth-child(even) { background-color: #f8fafc; }
+              .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <img src="${logoUrl}" class="logo">
+              <div class="title-box">
+                <h1>MANGOSQUEEN REPORT</h1>
+                <p>Mangosteen Disease Monitoring & Analysis</p>
+              </div>
+              <div class="meta-info">
+                <p><strong>Generated:</strong> ${dateStr}</p>
+              </div>
+            </div>
+            <div class="summary-row">
+              <div class="card">
+                <div class="card-label">Total Uploaded</div>
+                <div class="card-value">${total}</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Disease Detected</div>
+                <div class="card-value">${diseaseCount}</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Disease Rate</div>
+                <div class="card-value highlight-text">${rate}%</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Most Common</div>
+                <div class="card-value highlight-text">${mostCommon}</div>
+              </div>
+            </div>
+            <h2>Detailed Upload History</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Upload Date</th>
+                  <th>Disease Type</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+            <div class="footer">
+              <p>MANGOSQUEEN - Automated Mangosteen Disease Detection System</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      doc.open();
+      doc.write(printContent);
+      doc.close();
+
+      iframe.contentWindow.focus();
+      setTimeout(() => {
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 500);
+    }
+
+    function generateWordReport() {
+      const { total, diseaseCount, rate, mostCommon } = getReportStats();
+      const dateStr = new Date().toLocaleString();
+
+      let tableRows = '';
+      modalData.forEach((row) => {
+        tableRows += `
+          <tr>
+            <td style="border-bottom:1px solid #f1f5f9; padding:10px;">${row.filename}</td>
+            <td style="border-bottom:1px solid #f1f5f9; padding:10px;">${new Date(row.dateTime).toLocaleString()}</td>
+            <td style="border-bottom:1px solid #f1f5f9; padding:10px;">${row.diseaseType}</td>
+            <td style="border-bottom:1px solid #f1f5f9; padding:10px;">${row.confidence}%</td>
+          </tr>
+        `;
+      });
+
+      const wordContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+          <head>
+            <meta charset='utf-8'>
+            <title>Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; }
+              table { border-collapse: collapse; width: 100%; }
+              .header { border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
+              .title { color: #667eea; font-size: 24px; font-weight: bold; text-transform: uppercase; }
+              .subtitle { color: #666; font-size: 14px; }
+              .summary-table td { border: 1px solid #e2e8f0; background-color: #f8fafc; padding: 15px; text-align: center; width: 25%; }
+              .card-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
+              .card-value { font-size: 20px; font-weight: bold; color: #4b5563; }
+              .data-table th { background-color: #805ad5; color: white; padding: 10px; text-align: left; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="title">MANGOSQUEEN REPORT</div>
+              <div class="subtitle">Mangosteen Disease Monitoring & Analysis</div>
+              <p style="font-size:12px; color:#777; text-align:right;">Generated: ${dateStr}</p>
+            </div>
+            <table class="summary-table" style="margin-bottom:30px;">
+              <tr>
+                <td>
+                  <div class="card-label">Total Uploaded</div>
+                  <div class="card-value">${total}</div>
+                </td>
+                <td>
+                  <div class="card-label">Disease Detected</div>
+                  <div class="card-value">${diseaseCount}</div>
+                </td>
+                <td>
+                  <div class="card-label">Disease Rate</div>
+                  <div class="card-value" style="color:#764ba2;">${rate}%</div>
+                </td>
+                <td>
+                  <div class="card-label">Most Common</div>
+                  <div class="card-value" style="color:#764ba2;">${mostCommon}</div>
+                </td>
+              </tr>
+            </table>
+            <h3 style="color:#333; border-left:5px solid #667eea; padding-left:10px;">Detailed Upload History</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Upload Date</th>
+                  <th>Disease Type</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+            <div style="margin-top:50px; text-align:center; font-size:10px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:20px;">
+              MANGOSQUEEN - Automated Mangosteen Disease Detection System
+            </div>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', wordContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Mangosqueen_Report.doc';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  });
+</script>
+
+{% endblock %}

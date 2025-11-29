@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>{% block title %}MangosQueen{% endblock %}</title>
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+
+    <style>
+        /* --------------------------------------------------------- */
+        /* MANGOSQUEEN DESIGN SYSTEM                                */
+        /* --------------------------------------------------------- */
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
+
+        /* --------------------------------------------------------- */
+        /* NAVBAR STYLES                                            */
+        /* --------------------------------------------------------- */
+        .navbar-top {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            padding: 0.75rem 0;
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            color: white !important;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none !important;
+        }
+
+        /* Desktop Links */
+        .nav-link-custom {
+            position: relative;
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none !important;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nav-link-custom:hover,
+        .nav-link-custom.active {
+            color: white !important;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .nav-link-custom::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: white;
+            transition: width 0.3s ease;
+            border-radius: 1px;
+        }
+
+        .nav-link-custom:hover::after,
+        .nav-link-custom.active::after {
+            width: 80%;
+        }
+
+        /* Logout Icon Specific Style */
+        .logout-icon-btn {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+        .logout-icon-btn:hover {
+            opacity: 1;
+            transform: translateX(3px);
+        }
+
+        /* Mobile Menu Button */
+        .menu-icon {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 24px;
+            height: 24px;
+            position: relative;
+            z-index: 60;
+        }
+
+        .menu-icon div {
+            width: 24px;
+            height: 2.5px;
+            background: white;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        .menu-icon.open div:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); background: #667eea; }
+        .menu-icon.open div:nth-child(2) { opacity: 0; }
+        .menu-icon.open div:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); background: #667eea; }
+
+        /* --------------------------------------------------------- */
+        /* RESPONSIVE HELPERS (FIXED: Tablet now uses Hamburger)    */
+        /* --------------------------------------------------------- */
+        /* Default: Mobile/Tablet view (Hamburger visible, Desktop Links Hidden) */
+        .desktop-nav {
+            display: none; 
+        }
+        
+        .mobile-nav-toggle {
+            display: block; 
+        }
+
+        /* On Large screens (Laptops/Desktops 1024px+) ONLY */
+        @media (min-width: 1024px) {
+            .desktop-nav {
+                display: flex !important;
+                align-items: center;
+            }
+            .mobile-nav-toggle {
+                display: none !important;
+            }
+        }
+
+        /* --------------------------------------------------------- */
+        /* MODERN MOBILE MENU (Fixed & Bulletproof)                 */
+        /* --------------------------------------------------------- */
+        .mobile-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transform-origin: top center;
+            transform: scaleY(0);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            overflow: hidden;
+            z-index: 40;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .mobile-menu.show {
+            transform: scaleY(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Force styling with !important to prevent Dashboard CSS conflicts */
+        .mobile-nav-link {
+            display: flex !important;
+            align-items: center !important;
+            padding: 12px 24px !important;
+            color: #4b5563 !important;
+            font-weight: 600 !important;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            border-radius: 12px;
+            margin: 4px 12px;
+            gap: 16px !important; /* Forced Gap */
+        }
+
+        /* Icon container fixed width */
+        .mobile-nav-link i {
+            width: 24px !important;
+            text-align: center !important;
+            font-size: 1.2rem !important;
+            display: inline-block !important;
+        }
+
+        /* Standard Hover (Purple) */
+        .mobile-nav-link:hover {
+            background-color: #f3ebff !important;
+            color: #764ba2 !important;
+            transform: translateX(5px);
+        }
+
+        /* Logout Hover (Red) - Overrides standard hover */
+        .mobile-nav-link.logout-link:hover {
+            background-color: #fef2f2 !important; /* Red-50 */
+            color: #f87171 !important; /* Red-400 text on hover */
+        }
+
+        /* Footer */
+        .footer-custom {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.875rem;
+            margin-top: auto; 
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* --- Custom Modal Styles for Logout, Delete, Success (Encapsulated) ---     */
+        /* RENAMED from .custom-modal to .custom-app-modal to avoid Bootstrap conflict */
+        /* -------------------------------------------------------------------------- */
+        .custom-app-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        .custom-app-modal.show {
+            display: flex;
+        }
+
+        /* All child selectors now use the unique prefix to avoid conflict */
+        .custom-app-modal .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            animation: modalSlideIn 0.3s ease;
+            position: relative;
+        }
+
+        .custom-app-modal .modal-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .custom-app-modal .modal-icon.warning {
+            color: #FF9800; /* Amber for warning/confirmation */
+        }
+
+        .custom-app-modal .modal-title {
+            font-size: clamp(1.3rem, 3vw, 1.6rem);
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .custom-app-modal .modal-message {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .custom-app-modal .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .custom-app-modal .modal-confirm-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); 
+            color: white;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none; 
+        }
+
+        .custom-app-modal .modal-confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+        }
+
+        .custom-app-modal .modal-cancel-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            padding: 0.8rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-app-modal .modal-cancel-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Update responsive styling to use the new class */
+        @media (max-width: 480px) {
+             .custom-app-modal .modal-content {
+                width: 85%;
+                padding: 1.5rem;
+            }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .custom-app-modal .modal-content {
+                width: 450px;
+            }
+        }
+        @media (min-width: 1441px) {
+            .custom-app-modal .modal-content {
+                width: 500px;
+            }
+        }
+        /* --- End Custom Modal Styles --- */
+        
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar-top sticky top-0 z-50" id="mainNavbar">
+        <div class="w-full px-6 lg:px-12"> 
+            <div class="flex justify-between items-center relative">
+                
+                <a href="{{ url_for('home') }}" class="nav-brand text-xl">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="h-10 w-10 object-contain">
+                    <span>MANGOSQUEEN</span>
+                </a>
+
+                <div class="desktop-nav space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link-custom {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('scan') }}" class="nav-link-custom {% if request.endpoint == 'scan' %}active{% endif %}">
+                        Scan
+                    </a>
+                    <a href="{{ url_for('sort') }}" class="nav-link-custom {% if request.endpoint == 'sort' %}active{% endif %}">
+                        Sort
+                    </a>
+                    <a href="{{ url_for('about') }}" class="nav-link-custom {% if request.endpoint == 'about' %}active{% endif %}">
+                        About
+                    </a>
+
+                    {% if logged_in %}
+                        <div class="h-6 w-px bg-white opacity-30 mx-2"></div>
+                        <a href="{{ url_for('profile') }}" class="nav-link-custom {% if request.endpoint == 'profile' %}active{% endif %}">
+                            Profile
+                        </a>
+                        <a href="#" 
+                           class="nav-link-custom logout-icon-btn" 
+                           title="Logout"
+                           onclick="showLogoutConfirmModal(event)">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
+                    {% else %}
+                        <div class="h-6 w-px bg-white opacity-30 mx-2"></div>
+                        <a href="{{ url_for('login') }}" class="nav-link-custom">
+                            Login
+                        </a>
+                    {% endif %}
+                </div>
+
+                <div class="mobile-nav-toggle">
+                    <div class="menu-icon" id="mobileMenuBtn">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-menu mobile-nav-toggle" id="mobileMenu">
+            <div class="py-4 space-y-1">
+                <a href="{{ url_for('dashboard') }}" class="mobile-nav-link">
+                    <i class="fas fa-tachometer-alt text-purple-400"></i> 
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('scan') }}" class="mobile-nav-link">
+                    <i class="fas fa-search text-purple-400"></i> 
+                    <span>Scan</span>
+                </a>
+                <a href="{{ url_for('sort') }}" class="mobile-nav-link">
+                    <i class="fas fa-filter text-purple-400"></i> 
+                    <span>Sort</span>
+                </a>
+                <a href="{{ url_for('about') }}" class="mobile-nav-link">
+                    <i class="fas fa-info-circle text-purple-400"></i> 
+                    <span>About</span>
+                </a>
+                
+                <div class="h-px bg-gray-200 my-3 mx-4"></div>
+                
+                {% if logged_in %}
+                    <a href="{{ url_for('profile') }}" class="mobile-nav-link">
+                        <i class="fas fa-user text-purple-400"></i> 
+                        <span>Profile</span>
+                    </a>
+                    <a href="#" 
+                       class="mobile-nav-link logout-link"
+                       onclick="showLogoutConfirmModal(event)">
+                        <i class="fas fa-sign-out-alt text-red-400"></i> 
+                        <span class="text-red-400">Logout</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="mobile-nav-link">
+                        <i class="fas fa-sign-in-alt text-green-500"></i> 
+                        <span class="text-green-600">Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer-custom">
+        <div class="container mx-auto px-4">
+            <p class="mb-2 font-semibold text-gray-700">MANGOSQUEEN</p>
+            <p class="text-xs text-gray-500">
+                An AI-Powered system to support farmers in mangosteen fruit disease detection, with smart prevention, and automated sorting solutions.
+            </p>
+            <p class="text-xs text-gray-400 mt-2">&copy; 2025 All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="logout-confirm-modal" class="custom-app-modal">
+        <div class="modal-content">
+            <div class="modal-icon warning">
+                <i class="fas fa-exclamation-triangle"></i> 
+            </div>
+            <h3 class="modal-title">Confirm Logout</h3>
+            <p class="modal-message">
+                Are you sure you want to LOG OUT of your MANGOSQUEEN account?
+            </p>
+            <div class="modal-buttons">
+                <a href="{{ url_for('logout') }}" class="modal-confirm-btn">
+                    <i class="fas fa-sign-out-alt"></i> Confirm
+                </a>
+                <button class="modal-cancel-btn" onclick="closeLogoutConfirmModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // --- CUSTOM LOGOUT MODAL JS ---
+        function showLogoutConfirmModal(event) {
+            if (event) {
+                // Prevent navigation/page change
+                event.preventDefault(); 
+                // Stop the click from closing the mobile menu immediately
+                event.stopPropagation();
+            }
+            const modal = document.getElementById('logout-confirm-modal');
+            if (modal) {
+                modal.classList.add('show');
+            }
+        }
+
+        window.closeLogoutConfirmModal = function() {
+            const modal = document.getElementById('logout-confirm-modal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        }
+        // --- END CUSTOM LOGOUT MODAL JS ---
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const navbar = document.getElementById('mainNavbar');
+
+            if(mobileBtn && mobileMenu) {
+                // Toggle Menu Function
+                function toggleMenu() {
+                    const isOpen = mobileMenu.classList.contains('show');
+                    
+                    if (isOpen) {
+                        // Close
+                        mobileMenu.classList.remove('show');
+                        mobileBtn.classList.remove('open');
+                    } else {
+                        // Open
+                        mobileMenu.classList.add('show');
+                        mobileBtn.classList.add('open');
+                    }
+                }
+
+                // Click on Hamburger
+                mobileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    toggleMenu();
+                });
+
+                // Click Outside Logic (Closes menu when clicking content or outside)
+                document.addEventListener('click', (e) => {
+                    const isClickInsideMenu = mobileMenu.contains(e.target);
+                    const isClickOnBtn = mobileBtn.contains(e.target);
+                    const isMenuOpen = mobileMenu.classList.contains('show');
+
+                    if (isMenuOpen && !isClickInsideMenu && !isClickOnBtn) {
+                        mobileMenu.classList.remove('show');
+                        mobileBtn.classList.remove('open');
+                    }
+                });
+
+                // Close menu when a regular link is clicked
+                const links = mobileMenu.querySelectorAll('a');
+                links.forEach(link => {
+                    link.addEventListener('click', () => {
+                        // Only close the menu if the link is NOT the logout link (which opens the modal via JS)
+                        if (link.getAttribute('onclick') !== 'showLogoutConfirmModal(event)') {
+                            mobileMenu.classList.remove('show');
+                            mobileBtn.classList.remove('open');
+                        }
+                    });
+                });
+            }
+
+            // ADDED: Close the custom logout modal when clicking the background/overlay
+            const logoutModal = document.getElementById('logout-confirm-modal');
+            if (logoutModal) {
+                logoutModal.addEventListener('click', function(e) {
+                    // Check if the click target is the modal container itself (the dark overlay)
+                    if (e.target === this) {
+                        closeLogoutConfirmModal();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

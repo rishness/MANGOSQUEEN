@@ -1,0 +1,597 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    MANGOSQUEEN - Sort
+{% endblock %}
+
+{% block content %}
+
+<style>
+  /* Page load transition */
+  body {
+    animation: pageLoadFade 0.3s ease-in;
+  }
+
+  @keyframes pageLoadFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Main Container */
+  .scan-page-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+  }
+
+  /* Main Card Container - Matches Scan Page */
+  .scan-container {
+    max-width: 1700px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .scan-container h2 {
+    margin-bottom: 0.5rem;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .scan-description {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-weight: 500;
+  }
+
+  /* --- Button Styles (Adapted from Scan) --- */
+  .control-btn {
+    padding: 0.8rem 1.8rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    background: white;
+    border: 2px solid transparent; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-width: 140px;
+  }
+
+  .control-btn:disabled {
+    background: #f5f5f5;
+    color: #aaaaaa;
+    border-color: #ddd;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none !important;
+  }
+
+  /* Start Button (UPDATED TO PURPLE) */
+  .btn-start {
+    border-color: #667eea;
+    color: #667eea;
+  }
+  .btn-start:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  /* Stop Button (Warning/Orange) */
+  .btn-stop {
+    border-color: #ffc107;
+    color: #d39e00;
+  }
+  .btn-stop:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
+  }
+
+  /* Reset Button (Red) */
+  .btn-reset {
+    border-color: #dc3545;
+    color: #dc3545;
+  }
+  .btn-reset:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+  }
+
+  /* --- Layout Sections --- */
+  .sort-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .content-section {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  /* --- Camera Area (Matches Scan Page) --- */
+  .camera-feed-container {
+    width: 100%;
+    min-height: 350px;
+    max-height: 500px;
+    aspect-ratio: 16/9;
+    border-radius: 12px;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border: 2px dashed #cbd5e0;
+  }
+
+  .camera-active {
+    background: white;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.5s;
+  }
+
+  /* --- Status Cards --- */
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid #edf2f7;
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .stat-value {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #718096;
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Status Indicators */
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .status-indicator.online { background-color: #28a745; animation: pulse 2s infinite; }
+  .status-indicator.offline { background-color: #dc3545; }
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Charts Containers */
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+
+  /* --- MEDIA QUERIES (From Scan.html) --- */
+  
+  /* Desktop (Side by Side Layout) */
+  @media (min-width: 1024px) {
+    .sort-grid {
+      grid-template-columns: 1.2fr 0.8fr; /* Camera larger, Stats smaller */
+      grid-template-rows: auto auto;
+    }
+    
+    .section-controls { grid-column: 1 / -1; }
+    .section-camera { grid-column: 1 / 2; grid-row: 2 / 3; }
+    .section-status { grid-column: 2 / 3; grid-row: 2 / 3; }
+    .section-analytics { grid-column: 1 / -1; grid-row: 3 / 4; }
+  }
+
+  /* Large Desktop */
+  @media (min-width: 1441px) {
+    .sort-grid {
+      gap: 2rem;
+    }
+    .scan-container {
+      padding: 2.5rem;
+    }
+  }
+
+  /* Tablet / Mobile */
+  @media (max-width: 1023px) {
+    .sort-grid {
+      grid-template-columns: 1fr;
+    }
+    .status-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Small Mobile */
+  @media (max-width: 480px) {
+    .scan-container {
+      padding: 1rem;
+    }
+    .control-btn {
+      width: 100%;
+    }
+    .controls-wrapper {
+      flex-direction: column;
+    }
+    .status-grid {
+      grid-template-columns: 1fr; /* Stack stats on very small screens */
+    }
+    .chart-wrapper {
+      height: 250px;
+    }
+  }
+
+  .text-success-custom { color: #28a745; }
+  .text-danger-custom { color: #dc3545; }
+</style>
+
+<div class="scan-page-container">
+    <div class="scan-container">
+        <h2>Mangosteen Quality Sorter</h2>
+        <p class="scan-description">Real-Time Fruit Sorting Machine Interface</p>
+
+        <div class="sort-grid">
+            
+            <div class="content-section section-controls">
+                <h4 class="section-title">Sorting Controls</h4>
+                <div class="d-flex justify-content-center gap-3 flex-wrap controls-wrapper">
+                    <button id="start-btn" class="control-btn btn-start">
+                        <i class="fas fa-play"></i> Start Machine
+                    </button>
+                    <button id="stop-btn" class="control-btn btn-stop" disabled>
+                        <i class="fas fa-stop"></i> Stop Machine
+                    </button>
+                    <button id="reset-btn" class="control-btn btn-reset" disabled>
+                        <i class="fas fa-redo"></i> Reset Data
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-section section-camera">
+                <h4 class="section-title">Live Camera Feed</h4>
+                <div class="camera-feed-container">
+                    <div class="camera-placeholder">
+                        <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
+                        <p class="text-gray-500 font-medium">Waiting for camera connection...</p>
+                        <div class="mt-4 flex items-center justify-center">
+                            <span class="status-indicator offline"></span>
+                            <span class="text-sm text-gray-500 status-text">Camera offline</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section section-status">
+                <h4 class="section-title">Current Status</h4>
+                
+                <div class="status-grid">
+                    <div class="stat-card">
+                        <div id="good-count" class="stat-value text-success-custom">0</div>
+                        <div class="stat-label">Good Fruits</div>
+                    </div>
+                    <div class="stat-card">
+                        <div id="rejected-count" class="stat-value text-danger-custom">0</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="progress" style="height: 12px; border-radius: 6px; background-color: #edf2f7;">
+                        <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%; border-radius: 6px;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <small class="text-gray-500 font-semibold">Acceptance Rate</small>
+                        <small id="progress-text" class="text-gray-700 font-bold">0%</small>
+                    </div>
+                </div>
+
+                <div class="chart-wrapper" style="height: 220px;">
+                    <canvas id="sorting-pie-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="content-section section-analytics">
+                <h4 class="section-title">Performance Analytics</h4>
+                <div class="chart-wrapper">
+                    <canvas id="performance-chart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize empty counts
+        const counts = { good: 0, rejected: 0 };
+        
+        // Get DOM elements
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        let sortingActive = false;
+        let sortingInterval = null;
+        let lastUpdateTime = Date.now();
+        
+        // Initialize pie chart
+        const pieCtx = document.getElementById('sorting-pie-chart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'doughnut', 
+            data: {
+                labels: ['GOOD', 'REJECTED'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+
+        // Initialize performance chart
+        const performanceCtx = document.getElementById('performance-chart').getContext('2d');
+        const gradient = performanceCtx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(40, 167, 69, 0.2)');
+        gradient.addColorStop(1, 'rgba(40, 167, 69, 0.0)');
+
+        const performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 10}, (_, i) => i + 1),
+                datasets: [{
+                    label: 'Good Fruits Processed',
+                    data: Array(10).fill(0),
+                    borderColor: '#28a745',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#28a745',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+        
+        // Start Handler
+        startBtn.addEventListener('click', function() {
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            resetBtn.disabled = true;
+            sortingActive = true;
+            
+            // UI Updates
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            const cameraPlaceholder = document.querySelector('.camera-placeholder');
+            
+            statusIndicator.className = 'status-indicator online';
+            statusText.textContent = 'Camera online - Streaming';
+            cameraPlaceholder.innerHTML = `
+                <div class="camera-active">
+                    <i class="fas fa-check-circle text-success-custom fa-3x mb-3"></i>
+                    <p class="text-success-custom font-bold">System Active</p>
+                    <p class="text-gray-500 text-sm">Processing live feed...</p>
+                </div>
+            `;
+            
+            initializeDeviceConnection();
+        });
+        
+        // Stop Handler
+        stopBtn.addEventListener('click', function() {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = false;
+            sortingActive = false;
+            
+            disconnectFromDevice();
+        });
+        
+        // Reset Handler
+        resetBtn.addEventListener('click', function() {
+            document.getElementById('good-count').textContent = '0';
+            document.getElementById('rejected-count').textContent = '0';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-text').textContent = '0%';
+            
+            pieChart.data.datasets[0].data = [0, 0];
+            pieChart.update();
+            
+            performanceChart.data.datasets[0].data = Array(10).fill(0);
+            performanceChart.update();
+            
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.querySelector('.status-text');
+            const cameraPlaceholder = document.querySelector('.camera-placeholder');
+            
+            statusIndicator.className = 'status-indicator offline';
+            statusText.textContent = 'Camera offline';
+            cameraPlaceholder.innerHTML = `
+                <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
+                <p class="text-gray-500 font-medium">Waiting for camera connection...</p>
+                <div class="mt-4 flex items-center justify-center">
+                    <span class="status-indicator offline"></span>
+                    <span class="text-sm text-gray-500 status-text">Camera offline</span>
+                </div>
+            `;
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            resetBtn.disabled = true;
+            sortingActive = false;
+        });
+        
+        // Simulation Logic
+        function initializeDeviceConnection() {
+            setTimeout(() => {
+                if (sortingActive) {
+                    startFruitDetection();
+                }
+            }, 1000);
+        }
+        
+        function disconnectFromDevice() {
+            console.log("Device Disconnected");
+        }
+        
+        function startFruitDetection() {
+            sortingInterval = setInterval(() => {
+                if (sortingActive) {
+                    const randomQuality = Math.random() > 0.3 ? 'good' : 'rejected';
+                    const deviceData = {
+                        type: 'fruit_detected',
+                        quality: randomQuality,
+                        timestamp: Date.now(),
+                        confidence: Math.random().toFixed(2)
+                    };
+                    processDeviceData(deviceData);
+                }
+            }, 1500);
+        }
+        
+        function processDeviceData(data) {
+            if (data.type === 'fruit_detected') {
+                updateSortingCount(data.quality);
+            }
+        }
+        
+        function updateSortingCount(quality) {
+            if (!sortingActive) return;
+            
+            const counter = document.getElementById(`${quality}-count`);
+            const currentCount = parseInt(counter.textContent);
+            counter.textContent = currentCount + 1;
+            
+            // Animation
+            counter.classList.add('count-update');
+            setTimeout(() => counter.classList.remove('count-update'), 500);
+            
+            // Update Pie
+            pieChart.data.datasets[0].data = [
+                parseInt(document.getElementById('good-count').textContent),
+                parseInt(document.getElementById('rejected-count').textContent)
+            ];
+            pieChart.update();
+            
+            // Update Progress
+            const total = pieChart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+            if (total > 0) {
+                const goodPercent = Math.round((pieChart.data.datasets[0].data[0] / total) * 100);
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                progressBar.style.width = `${goodPercent}%`;
+                progressText.textContent = `${goodPercent}%`;
+                
+                if (goodPercent >= 80) progressBar.className = 'progress-bar bg-success';
+                else if (goodPercent >= 60) progressBar.className = 'progress-bar bg-warning';
+                else progressBar.className = 'progress-bar bg-danger';
+            }
+            
+            // Update Performance Chart
+            const now = Date.now();
+            if (now - lastUpdateTime >= 2000) { // Faster update for demo
+                lastUpdateTime = now;
+                const currentData = performanceChart.data.datasets[0].data;
+                currentData.push(pieChart.data.datasets[0].data[0]);
+                if (currentData.length > 10) currentData.shift();
+                performanceChart.update();
+            }
+        }
+        
+        // CSS Animation for counter pulse
+        const style = document.createElement('style');
+        style.textContent = `
+            .count-update { animation: countPulse 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+            @keyframes countPulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: var(--primary-color); } 100% { transform: scale(1); } }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

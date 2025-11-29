@@ -1,0 +1,653 @@
+{% extends 'base.html' %}
+
+{% block title %}MANGOSQUEEN - Profile{% endblock %}
+
+{% block content %}
+
+<style>
+  /* 1. Page & Layout Control */
+  body {
+    overflow-x: hidden;
+    height: 100vh; 
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scan-page-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    overflow: hidden;
+    justify-content: center;
+  }
+
+  /* 2. Main Card Styling */
+  .scan-container {
+    max-width: 1700px;
+    width: 100%;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: auto;
+    max-height: 90vh;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* 3. Header Section */
+  .profile-header {
+    background: #f8f7fc;
+    padding: 1.5rem 2rem;
+    color: #2d3748; 
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .profile-avatar {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .profile-title h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+    color: #1a202c;
+  }
+  .profile-title p {
+    margin: 0;
+    color: #718096;
+    font-size: 0.95rem;
+  }
+
+  /* 4. Content Grid */
+  .profile-content {
+    padding: 2rem;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    background: #ffffff;
+  }
+
+  /* Custom Scrollbar */
+  .profile-content::-webkit-scrollbar { width: 6px; }
+  .profile-content::-webkit-scrollbar-thumb { background-color: #cbd5e0; border-radius: 3px; }
+
+  /* 5. Form Elements */
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-label-custom {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #718096;
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  .form-control-custom {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    background-color: #f8fafc;
+  }
+
+  .form-control-custom:focus {
+    border-color: #667eea;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  /* Read-only style for Email */
+  .form-control-custom[readonly] {
+    background-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    border-color: #dee2e6;
+  }
+
+  /* 6. Security Panel */
+  .security-panel {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #edf2f7;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-update {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    margin-top: auto;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .btn-update:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(102, 126, 234, 0.25);
+  }
+
+  /* Verification Button Style */
+  .btn-verify {
+    width: 100%;
+    padding: 0.7rem;
+    background: white;
+    border: 1px solid #667eea;
+    color: #667eea;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  
+  .btn-verify:hover:not(:disabled) {
+    background: #f3ebff;
+  }
+  
+  .btn-verify:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* --- ENHANCED MODAL STYLES --- */
+  .custom-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Slightly lighter overlay */
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .custom-modal.show {
+    display: flex;
+    opacity: 1;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    max-width: 90%;
+    width: 420px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .custom-modal.show .modal-content {
+    transform: scale(1);
+  }
+
+  .modal-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.2rem;
+    display: inline-block;
+  }
+  .modal-icon.success { color: #10b981; }
+  .modal-icon.error { color: #ef4444; }
+  .modal-icon.info { color: #3b82f6; }
+
+  .modal-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1f2937;
+    margin-bottom: 0.8rem;
+  }
+
+  .modal-message {
+    color: #6b7280;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .modal-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 2.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+  }
+  .modal-btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.35);
+  }
+
+  @media (max-width: 992px) {
+    .profile-content { grid-template-columns: 1fr; gap: 1.5rem; }
+    .scan-container { max-height: none; height: auto; }
+    body { overflow-y: auto; height: auto; }
+  }
+</style>
+
+<div class="scan-page-container">
+    <div class="scan-container">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="profile-title">
+                <h2>{{ user.name }}</h2>
+                <p>Manage your account settings</p>
+            </div>
+        </div>
+
+        <form id="profileForm" method="POST" style="display: contents;">
+            <input type="hidden" name="action" value="update_profile">
+            <input type="hidden" id="original_name" value="{{ user.name }}">
+            <input type="hidden" id="original_username" value="{{ user.username }}">
+            <input type="hidden" id="original_email" value="{{ user.email }}">
+            <input type="hidden" id="auth_method" value="{{ user.auth_method if user.auth_method else 'manual' }}">
+
+            <div class="profile-content">
+                <div class="left-col">
+                    <div class="panel-title">
+                        <i class="fas fa-address-card text-purple-500"></i> Personal Details
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name" class="form-label-custom">Full Name</label>
+                        <input type="text" class="form-control-custom profile-field" id="name" name="name" value="{{ user.name }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username" class="form-label-custom">Username</label>
+                        <input type="text" class="form-control-custom profile-field" id="username" name="username" value="{{ user.username }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label-custom">Email Address <span style="font-size: 0.7em; color: #999; font-weight: normal;">(Not Editable)</span></label>
+                        <input type="email" class="form-control-custom" id="email" name="email" value="{{ user.email }}" readonly>
+                    </div>
+                </div>
+
+                <div class="right-col">
+                    <div class="security-panel">
+                        <div class="panel-title">
+                            <i class="fas fa-shield-alt text-purple-500"></i> Security & Confirmation
+                        </div>
+
+                        {% if not user.auth_method or user.auth_method == 'manual' %}
+                        <div id="change-password-wrapper">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="change_password" name="change_password">
+                                <label class="form-check-label" style="font-weight: 500; font-size: 0.9rem; color: #4a5568; cursor: pointer;" for="change_password">
+                                    Update Password
+                                </label>
+                            </div>
+
+                            <div id="password-section" style="display: none; animation: fadeIn 0.3s; margin-bottom: 1.5rem; padding-left: 0.5rem; border-left: 2px solid #667eea;">
+                                <div class="form-group">
+                                    <label class="form-label-custom">New Password</label>
+                                    <input type="password" class="form-control-custom" id="new_password" name="new_password" placeholder="Min. 6 characters">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label-custom">Confirm Password</label>
+                                    <input type="password" class="form-control-custom" id="confirm_password" name="confirm_password" placeholder="Re-type password">
+                                </div>
+                            </div>
+
+                            <div id="password-auth-section" style="display: none; margin-top: 1rem; border-top: 1px dashed #cbd5e0; padding-top: 1rem;">
+                                <div class="alert alert-light border shadow-sm p-2 mb-2" style="font-size: 0.85rem; color: #555; background: #fff;">
+                                    <i class="fas fa-info-circle text-primary me-1"></i> Please enter your current password to save changes.
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label-custom text-danger">Current Password</label>
+                                    <input type="password" class="form-control-custom" id="current_password" name="current_password" placeholder="Required for verification">
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div id="email-verification-section" style="display: none; margin-top: 1rem; border-top: 1px dashed #cbd5e0; padding-top: 1rem;">
+                            <div class="alert alert-light border shadow-sm p-2 mb-3" style="font-size: 0.85rem; color: #555; background: #fff;">
+                                <i class="fas fa-lock text-primary me-1"></i> Security Verification
+                            </div>
+                            
+                            <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                                To save these changes, we need to verify it's you. Click below to send a code to your email.
+                            </p>
+                            
+                            <button type="button" class="btn-verify" id="send-verification-btn">
+                                <i class="fas fa-paper-plane me-2"></i>Send Verification Code
+                            </button>
+                            
+                            <div class="form-group mt-3" id="verification-code-row" style="display: none; animation: fadeIn 0.3s;">
+                                <label class="form-label-custom">Enter 6-Digit Code</label>
+                                <input type="text" class="form-control-custom" id="verification_code" name="verification_code" maxlength="6" style="letter-spacing: 3px; text-align: center; font-size: 1.1rem;" placeholder="000000">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-update">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="status-modal" class="custom-modal">
+    <div class="modal-content">
+        <div id="modal-icon" class="modal-icon"></div>
+        <h3 id="modal-title" class="modal-title"></h3>
+        <p id="modal-message" class="modal-message"></p>
+        <button class="modal-btn" onclick="closeStatusModal()">Okay</button>
+    </div>
+</div>
+
+<div id="server-messages" style="display:none;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div data-category="{{ category }}" data-message="{{ message }}"></div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileFields = document.querySelectorAll('.profile-field');
+        const passwordAuthSection = document.getElementById('password-auth-section');
+        const emailVerificationSection = document.getElementById('email-verification-section');
+        const authMethod = document.getElementById('auth_method').value;
+        const changePasswordCheckbox = document.getElementById('change_password');
+        const passwordSection = document.getElementById('password-section');
+        const sendVerificationBtn = document.getElementById('send-verification-btn');
+        const verificationCodeRow = document.getElementById('verification-code-row');
+        
+        // Detection values
+        const originalName = document.getElementById('original_name').value;
+        const originalUsername = document.getElementById('original_username').value;
+
+        // 1. Handle Server Flash Messages via Modal (For redirect-based events)
+        const serverMessages = document.querySelectorAll('#server-messages div');
+        if (serverMessages.length > 0) {
+            const msg = serverMessages[0]; 
+            const category = msg.getAttribute('data-category'); 
+            const text = msg.getAttribute('data-message');
+            
+            let title = category === 'success' ? 'Success!' : 'Notice';
+            let iconType = category === 'success' ? 'success' : (category === 'danger' ? 'error' : 'info');
+            
+            showStatusModal(iconType, title, text);
+        }
+
+        // 2. Monitor input changes
+        profileFields.forEach(field => {
+            field.addEventListener('input', checkForChanges);
+        });
+
+        // 3. Toggle Password Change Visibility (Manual Only)
+        if (changePasswordCheckbox) {
+            changePasswordCheckbox.addEventListener('change', function() {
+                if(this.checked) {
+                    passwordSection.style.display = 'block';
+                } else {
+                    passwordSection.style.display = 'none';
+                    document.getElementById('new_password').value = '';
+                    document.getElementById('confirm_password').value = '';
+                }
+                checkForChanges();
+            });
+        }
+
+        // 4. Logic to show/hide Auth Requirements
+        function checkForChanges() {
+            const nameChanged = document.getElementById('name').value !== originalName;
+            const usernameChanged = document.getElementById('username').value !== originalUsername;
+            const passwordChangeRequested = changePasswordCheckbox && changePasswordCheckbox.checked;
+            
+            const hasChanges = nameChanged || usernameChanged || passwordChangeRequested;
+
+            // Reset both sections first
+            if (passwordAuthSection) passwordAuthSection.style.display = 'none';
+            if (emailVerificationSection) emailVerificationSection.style.display = 'none';
+
+            if (hasChanges) {
+                if (authMethod === 'manual') {
+                    if (passwordAuthSection) passwordAuthSection.style.display = 'block';
+                } else if (authMethod === 'google') {
+                    if (emailVerificationSection) emailVerificationSection.style.display = 'block';
+                }
+            }
+        }
+
+        // 5. Send Verification Code (Google)
+        if (sendVerificationBtn) {
+            sendVerificationBtn.addEventListener('click', function() {
+                const btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Sending...';
+                
+                fetch('/send-verification-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: document.getElementById('email').value })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showStatusModal('success', 'Code Sent!', 'A verification code has been sent to your email address.');
+                        if(verificationCodeRow) verificationCodeRow.style.display = 'block';
+                        btn.innerHTML = '<i class="fas fa-check-circle me-2"></i> Code Sent';
+                        btn.style.borderColor = '#10b981';
+                        btn.style.color = '#10b981';
+                    } else {
+                        showStatusModal('error', 'Failed', data.message || 'Could not send code.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send Verification Code';
+                    }
+                })
+                .catch(error => {
+                    showStatusModal('error', 'Error', 'Network error sending code.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send Verification Code';
+                });
+            });
+        }
+
+        // 6. Form Submission (Updated to AJAX to prevent page reload on error)
+        document.getElementById('profileForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Stop default form submit
+
+            const nameChanged = document.getElementById('name').value !== originalName;
+            const usernameChanged = document.getElementById('username').value !== originalUsername;
+            const passwordChangeRequested = changePasswordCheckbox && changePasswordCheckbox.checked;
+
+            if (!nameChanged && !usernameChanged && !passwordChangeRequested) {
+                showStatusModal('info', 'No Changes', 'You haven\'t made any changes to your profile.');
+                return;
+            }
+
+            // Client-Side Auth Check
+            if (authMethod === 'manual') {
+                const pass = document.getElementById('current_password').value;
+                if (!pass) {
+                    showStatusModal('error', 'Authentication Required', 'Please enter your current password to save changes.');
+                    return;
+                }
+            } else if (authMethod === 'google') {
+                const code = document.getElementById('verification_code').value;
+                if (!code) {
+                    showStatusModal('error', 'Verification Required', 'Please enter the 6-digit code sent to your email.');
+                    return;
+                }
+            }
+
+            // New Password Validation
+            if (passwordChangeRequested && authMethod === 'manual') {
+                const newP = document.getElementById('new_password').value;
+                const confP = document.getElementById('confirm_password').value;
+                
+                if (newP.length < 6) {
+                    showStatusModal('error', 'Weak Password', 'New password must be at least 6 characters long.');
+                    return;
+                }
+                if (newP !== confP) {
+                    showStatusModal('error', 'Mismatch', 'New passwords do not match. Please try again.');
+                    return;
+                }
+            }
+
+            // Perform AJAX Request
+            const formData = new FormData(this);
+            const submitBtn = document.querySelector('.btn-update');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // UI Loading State
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+
+            fetch(window.location.href, { 
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Helper for backend to detect AJAX
+                }
+            })
+            .then(response => {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    // Fallback in case backend returns HTML
+                    throw new Error("Server response was not JSON.");
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    showStatusModal('success', 'Profile Updated', 'Your changes have been saved successfully.');
+                    // Only reload on success to update values
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Check if error is related to verification code
+                    if (authMethod === 'google') {
+                        // We set a flag to clear the code when modal closes
+                        shouldClearCode = true;
+                    }
+                    showStatusModal('error', 'Update Failed', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatusModal('error', 'System Error', 'An unexpected error occurred. Please try again or check console.');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        });
+    });
+
+    // --- Modal Helper Functions ---
+    
+    // Flag to control input clearing
+    let shouldClearCode = false; 
+
+    function showStatusModal(type, title, message) {
+        const modal = document.getElementById('status-modal');
+        const iconDiv = document.getElementById('modal-icon');
+        const titleEl = document.getElementById('modal-title');
+        const msgEl = document.getElementById('modal-message');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        // Set Icon
+        if (type === 'success') {
+            iconDiv.innerHTML = '<i class="fas fa-check-circle"></i>';
+            iconDiv.className = 'modal-icon success';
+        } else if (type === 'error' || type === 'danger') {
+            iconDiv.innerHTML = '<i class="fas fa-times-circle"></i>';
+            iconDiv.className = 'modal-icon error';
+        } else {
+            iconDiv.innerHTML = '<i class="fas fa-info-circle"></i>';
+            iconDiv.className = 'modal-icon info';
+        }
+
+        modal.classList.add('show');
+    }
+
+    function closeStatusModal() {
+        const modal = document.getElementById('status-modal');
+        modal.classList.remove('show');
+        
+        // This is the key fix: Clear code input only if flag is set
+        if (shouldClearCode) {
+            const codeInput = document.getElementById('verification_code');
+            if (codeInput) {
+                codeInput.value = ''; 
+                codeInput.focus();
+            }
+            shouldClearCode = false; // Reset flag
+        }
+    }
+    
+    document.getElementById('status-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeStatusModal();
+    });
+</script>
+
+{% endblock %}

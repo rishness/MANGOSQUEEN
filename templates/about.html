@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    MANGOSQUEEN - About
+{% endblock %}
+
+{% block content %}
+
+<style>
+  /* Page load transition */
+  body {
+    animation: pageLoadFade 0.3s ease-in;
+  }
+
+  @keyframes pageLoadFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Main Container */
+  .scan-page-container {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2rem;
+  }
+
+  /* Main Card Container - Matches Scan/Sort Page */
+  .scan-container {
+    max-width: 1700px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .scan-container h2 {
+    margin-bottom: 0.5rem;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .scan-description {
+    color: #666;
+    margin-bottom: 3rem;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  /* --- Section Styles --- */
+  .about-section-title {
+    color: #4a5568;
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .about-section-icon {
+    color: #764ba2;
+  }
+
+  /* --- Cards --- */
+  .content-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .content-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .card-header-custom {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+  }
+
+  .feature-item {
+    margin-bottom: 1.5rem;
+  }
+  .feature-item h5 {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  .feature-item p {
+    color: #4a5568;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* --- Grid Layouts --- */
+  .about-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .about-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  /* --- Tutorial Cards --- */
+  .tutorial-list {
+    padding-left: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  .tutorial-list li {
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+    font-size: 0.9rem;
+  }
+
+  .btn-tutorial {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    margin-top: auto;
+  }
+  .btn-tutorial:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  /* --- FAQ Accordion --- */
+  .faq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .faq-item {
+    background: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .faq-question {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    font-weight: 600;
+    color: #2d3748;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+  }
+
+  .faq-question:hover {
+    background: #edf2f7;
+    color: #667eea;
+  }
+
+  .faq-answer {
+    padding: 0 1.5rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
+    background: white;
+    color: #4a5568;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .faq-item.active .faq-answer {
+    padding: 1rem 1.5rem;
+    max-height: 500px; /* Arbitrary large height */
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .faq-icon {
+    transition: transform 0.3s ease;
+  }
+  .faq-item.active .faq-icon {
+    transform: rotate(180deg);
+  }
+
+  /* --- Contact CTA --- */
+  .contact-cta {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+  }
+  .contact-cta h4 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .contact-cta p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+  }
+  .btn-contact {
+    background: white;
+    color: #764ba2;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .btn-contact:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    color: #667eea;
+  }
+
+  /* --- MEDIA QUERIES (Consistent with Scan/Sort) --- */
+  @media (max-width: 1024px) {
+    .about-grid-3 {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .scan-container {
+      padding: 1.5rem;
+    }
+    .about-grid-2 {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    .about-grid-3 {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    .contact-cta {
+      padding: 2rem 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .scan-container {
+      padding: 1rem;
+    }
+    .scan-container h2 {
+      font-size: 1.8rem;
+    }
+    .about-section-title {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+
+<div class="scan-page-container">
+    <div class="scan-container">
+        <h2>About MangosQueen</h2>
+        <p class="scan-description">Your Companion for Smart Mangosteen Fruit Detection and Sorting</p>
+
+        <div class="about-grid-2">
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-bullseye text-purple-500 mr-2"></i> Our Mission
+                </div>
+                <p style="color: #4a5568; line-height: 1.7; margin-bottom: 1rem;">
+                    MangosQueen is dedicated to revolutionizing mangosteen cultivation and production through cutting-edge technology. Our platform combines advanced image recognition, machine learning, and agricultural expertise to help farmers and producers identify diseases early, implement effective prevention strategies, and optimize fruit sorting processes.
+                </p>
+                <p style="color: #4a5568; line-height: 1.7;">
+                    We aim to increase mangosteen crop yields, improve fruit quality, reduce waste, and support sustainable farming practices across the industry.
+                </p>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-star text-purple-500 mr-2"></i> Key Features
+                </div>
+                
+                <div class="feature-item">
+                    <h5><i class="fas fa-search-plus mr-2"></i> Disease Detection</h5>
+                    <p>Our advanced AI system analyzes images of mangosteen plants and fruits to identify common diseases with high accuracy. Simply upload a photo, and our system will provide a diagnosis within seconds.</p>
+                </div>
+
+                <div class="feature-item">
+                    <h5><i class="fas fa-filter mr-2"></i> Automated Fruit Sorting</h5>
+                    <p>Our intelligent sorting system classifies mangosteen fruits based on size, ripeness, and quality. This technology helps producers streamline their operations and ensure consistent product quality.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section-title">
+            <i class="fas fa-book-open about-section-icon"></i> Tutorials
+        </div>
+        
+        <div class="about-grid-3">
+            <div class="content-card d-flex flex-column">
+                <div class="card-header-custom" style="font-size: 1.1rem;">How to Use Detection</div>
+                <ol class="tutorial-list">
+                    <li>Take a clear photo of the affected plant part</li>
+                    <li>Upload the image to our detection system</li>
+                    <li>Wait for the analysis results</li>
+                    <li>Review diagnosis & treatments</li>
+                </ol>
+                <a href="#" class="btn-tutorial text-center">View Tutorial</a>
+            </div>
+
+            <div class="content-card d-flex flex-column">
+                <div class="card-header-custom" style="font-size: 1.1rem;">Automated Sorting Setup</div>
+                <ol class="tutorial-list">
+                    <li>Calibrate the sorting system</li>
+                    <li>Set quality parameters</li>
+                    <li>Connect to production line</li>
+                    <li>Monitor and adjust as needed</li>
+                </ol>
+                <a href="#" class="btn-tutorial text-center">View Tutorial</a>
+            </div>
+
+            <div class="content-card d-flex flex-column">
+                <div class="card-header-custom" style="font-size: 1.1rem;">Interpreting Results</div>
+                <ol class="tutorial-list">
+                    <li>Understand confidence scores</li>
+                    <li>Differentiate disease types</li>
+                    <li>Apply appropriate treatments</li>
+                    <li>Document outcomes</li>
+                </ol>
+                <a href="#" class="btn-tutorial text-center">View Tutorial</a>
+            </div>
+        </div>
+
+        <div class="about-section-title">
+            <i class="fas fa-question-circle about-section-icon"></i> Frequently Asked Questions
+        </div>
+
+        <div class="faq-container mb-5">
+            <div class="faq-item">
+                <button class="faq-question">
+                    What diseases can MangosQueen detect?
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-answer">
+                    MangosQueen can detect a range of common mangosteen diseases including anthracnose, stem canker, leaf blight, root rot, and various fungal infections. Our AI system is continuously learning and improving its detection capabilities.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    How accurate is the system?
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-answer">
+                    Our disease detection system has an accuracy rate of over 90% for most common diseases, depending on image quality. We continuously train our AI with new data to improve accuracy.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    What are the sorting criteria?
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-answer">
+                    Our system classifies fruits based on size (diameter), ripeness (color analysis), external quality (blemishes), and firmness. It can be customized for specific market standards.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    Can it integrate with existing equipment?
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-answer">
+                    Yes, the automated sorting system is designed to integrate with standard conveyor systems. Our team provides custom integration solutions for specific production lines.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">
+                    What support is provided?
+                    <i class="fas fa-chevron-down faq-icon"></i>
+                </button>
+                <div class="faq-answer">
+                    We provide initial setup assistance, staff training, user manuals, video tutorials, and ongoing technical support. Enterprise clients receive dedicated support personnel.
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-cta">
+            <h4>Have Questions?</h4>
+            <p>We're here to help you get the most out of our mangosteen disease detection and sorting systems.</p>
+            <a href="mailto:mangosqueen.support@gmail.com" class="btn-contact">Contact Support</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+                
+                // Close all other items
+                document.querySelectorAll('.faq-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+
+                // Toggle current item
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}
