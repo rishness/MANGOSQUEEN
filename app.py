@@ -17,11 +17,8 @@ from email.mime.multipart import MIMEMultipart
 from PIL import Image
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-
-
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image 
-
 from functools import wraps
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -39,30 +36,18 @@ app.config.update(
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Check if Firebase is already initialized to prevent double-initialization errors
 if not firebase_admin._apps:
     try:
-        # 1. GET VARIABLES
-        private_key_content = os.getenv('FIREBASE_PRIVATE_KEY')
+        private_key = os.getenv('FIREBASE_PRIVATE_KEY')
         project_id = os.getenv('FIREBASE_PROJECT_ID')
         client_email = os.getenv('FIREBASE_CLIENT_EMAIL')
         
-        if private_key_content and project_id and client_email:
-            
-            # 2. DECODE KEY (The Fix)
-            try:
-                # Try to decode from Base64 (This handles your new .env format)
-                private_key = base64.b64decode(private_key_content).decode('utf-8')
-            except Exception:
-                # Fallback: If decoding fails, assume it's raw text (safety net)
-                private_key = private_key_content.replace('\\n', '\n')
-
-            # 3. INITIALIZE CREDENTIALS
+        if private_key and project_id and client_email:
             cred = credentials.Certificate({
                 "type": "service_account",
                 "project_id": project_id,
                 "private_key_id": os.getenv('FIREBASE_PRIVATE_KEY_ID'),
-                "private_key": private_key,  # Uses the decoded key from above
+                "private_key": private_key.replace('\\n', '\n'),
                 "client_email": client_email,
                 "client_id": os.getenv('FIREBASE_CLIENT_ID'),
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -71,14 +56,13 @@ if not firebase_admin._apps:
                 "client_x509_cert_url": os.getenv('FIREBASE_CLIENT_X509_CERT_URL'),
                 "universe_domain": "googleapis.com"
             })
-            
             firebase_admin.initialize_app(cred)
-            print("✅ Firebase initialized successfully.")
+            print("Firebase initialized successfully using Environment Variables.")
         else:
-            print("❌ CRITICAL ERROR: Firebase environment variables are missing.")
+            print("CRITICAL ERROR: Firebase environment variables are missing from .env file.")
             
     except Exception as e:
-        print(f"❌ Failed to initialize Firebase: {str(e)}")
+        print(f"Failed to initialize Firebase: {str(e)}")
 
 db = firestore.client()
 
@@ -103,7 +87,6 @@ def dashboard():
         return render_template('dashboard.html', logged_in=False)
 
     # Note: No flash messages here. They are handled in the login routes.
-    
     return render_template('dashboard.html', logged_in=True)
 
 
@@ -179,7 +162,6 @@ def logout():
 
 # -------------------- CORS HELPER FUNCTIONS --------------------
 
-
 def add_cors_headers(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -230,9 +212,8 @@ def add_cors_headers(f):
     return decorated_function
 
 
-
-
 # -------------------- CONTINUE WITH EMAIL ROUTES --------------------
+
 @app.route('/google_login', methods=['POST', 'OPTIONS'])
 @add_cors_headers
 def google_login():
@@ -1475,7 +1456,9 @@ def profile():
     
     return render_template('profile.html', logged_in=True, user=user)
 
+
 # -------------------- API ENDPOINTS --------------------
+
 @app.route('/api/disease-data')
 def get_disease_data():
     if not get_logged_in_status():
@@ -1542,7 +1525,9 @@ def delete_scan(scan_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 # -------------------- ERROR HANDLERS --------------------
+
 @app.errorhandler(404)
 def not_found_error(error):
     if request.path.startswith('/api/'):
