@@ -702,7 +702,7 @@
             }
         });
 
-        // Verify code
+        // Verify code - Add better error handling
         document.getElementById('verification_code').addEventListener('input', async function() {
             const code = this.value.trim();
             const email = document.getElementById('email').value.trim();
@@ -734,7 +734,8 @@
                         emailVerified = false;
                     }
                 } catch (error) {
-                    messageDiv.innerHTML = '<span class="text-red-600">Error verifying code</span>';
+                    console.error('Error verifying code:', error);
+                    messageDiv.innerHTML = '<span class="text-red-600">Error verifying code. Please try again.</span>';
                     this.classList.add('error');
                     emailVerified = false;
                 }
@@ -747,6 +748,7 @@
             updateRegisterButton();
         });
 
+        
         function validatePassword() {
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirm_password').value;
