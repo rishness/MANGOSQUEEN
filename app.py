@@ -496,22 +496,15 @@ def check_email():
 
 # -------------------- FORGOT/RESET PASSWORD ROUTES --------------------
 
+reset_codes = {}
+
 def send_reset_email(email, reset_code):
     """Send password reset email with verification code"""
     try:
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
-        sender_email = os.getenv('SMTP_EMAIL')
-        sender_password = os.getenv('SMTP_PASSWORD')
-        
-        # Debug logging
-        print(f"SMTP Configuration - Server: {smtp_server}, Port: {smtp_port}")
-        print(f"Sender Email: {sender_email}")
-        print(f"SMTP Password set: {bool(sender_password)}")
-        
-        if not sender_email or not sender_password:
-            print("❌ SMTP credentials missing from environment variables")
-            return False
+        sender_email = os.getenv('SMTP_EMAIL', 'your_email@gmail.com')
+        sender_password = os.getenv('SMTP_PASSWORD', 'your_app_password')
         
         message = MIMEMultipart("alternative")
         message["Subject"] = "MANGOSQUEEN Password Reset"
@@ -527,7 +520,7 @@ def send_reset_email(email, reset_code):
                 <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; text-align: center; margin: 20px 0;">
                     <h3 style="margin: 0; color: #6b46c1; font-size: 24px; letter-spacing: 5px;">{reset_code}</h3>
                 </div>
-                <p>This code will expire in 10 minutes for security reasons.</p>
+                <p>This code will expire in 1 minute for security reasons.</p>
                 <p>If you didn't request this reset, please ignore this email.</p>
                 <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
                 <p style="color: #718096; font-size: 14px;">MANGOSQUEEN Team</p>
@@ -538,40 +531,15 @@ def send_reset_email(email, reset_code):
         
         message.attach(MIMEText(html, "html"))
         
-        # Enhanced SMTP connection with better error handling
         with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.ehlo()  # Identify yourself to the SMTP server
-            server.starttls()  # Secure the connection
-            server.ehlo()  # Re-identify yourself over TLS connection
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email, message.as_string())
             
-            # Login with better error handling
-            try:
-                server.login(sender_email, sender_password)
-                print(f"✅ SMTP login successful for: {sender_email}")
-            except smtplib.SMTPAuthenticationError as auth_error:
-                print(f"❌ SMTP Authentication failed: {auth_error}")
-                return False
-            except Exception as login_error:
-                print(f"❌ SMTP Login error: {login_error}")
-                return False
-            
-            # Send email
-            try:
-                server.sendmail(sender_email, email, message.as_string())
-                print(f"✅ Reset email sent successfully to: {email}")
-                return True
-            except Exception as send_error:
-                print(f"❌ Error sending reset email: {send_error}")
-                return False
-                
-    except smtplib.SMTPException as smtp_error:
-        print(f"❌ SMTP Error: {smtp_error}")
-        return False
+        return True
     except Exception as e:
-        print(f"❌ Unexpected error in send_reset_email: {e}")
+        print(f"Error sending email: {e}")
         return False
-    
-    
 
 @app.route('/forgot-password', methods=['POST'])
 def forgot_password_ajax():
@@ -643,307 +611,71 @@ def reset_password_ajax():
 
 verification_codes = {}
 
-reset_codes = {}
-
-def send_verification_email_for_profile(email, code):
-    """Send profile verification email using alternative SMTP ports"""
-    try:
-        smtp_server = "smtp.gmail.com"
-        sender_email = os.getenv('SMTP_EMAIL')
-        sender_password = os.getenv('SMTP_PASSWORD')
-        
-        print(f"📧 Sending profile verification code to: {email}")
-        
-        if not sender_email or not sender_password:
-            print("❌ SMTP credentials missing from environment variables")
-            return False
-        
-        # Try different ports in order
-        smtp_ports = [587, 465, 25, 2525, 8025]
-        
-        for port in smtp_ports:
-            try:
-                print(f"🔄 Trying port {port} for profile verification...")
-                
-                if port == 465:
-                    server = smtplib.SMTP_SSL(smtp_server, port, timeout=15)
-                else:
-                    server = smtplib.SMTP(smtp_server, port, timeout=15)
-                    if port == 587:
-                        server.starttls()
-                
-                server.login(sender_email, sender_password)
-                print(f"✅ Profile verification - Connected via port {port}")
-                
-                message = MIMEMultipart("alternative")
-                message["Subject"] = "MANGOSQUEEN Profile Update Verification"
-                message["From"] = sender_email
-                message["To"] = email
-                
-                html = f"""
-                <html>
-                <body>
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #6b46c1;">MANGOSQUEEN Profile Update Verification</h2>
-                        <p>You requested to update your profile information. Please use the verification code below:</p>
-                        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; text-align: center; margin: 20px 0;">
-                            <h3 style="margin: 0; color: #6b46c1; font-size: 24px; letter-spacing: 5px;">{code}</h3>
-                        </div>
-                        <p>This code will expire in 10 minutes for security reasons.</p>
-                        <p>If you didn't request this update, please ignore this email.</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                        <p style="color: #718096; font-size: 14px;">MANGOSQUEEN Team</p>
-                    </div>
-                </body>
-                </html>
-                """
-                
-                message.attach(MIMEText(html, "html"))
-                server.sendmail(sender_email, email, message.as_string())
-                server.quit()
-                
-                print(f"🎉 Profile verification email sent via port {port}!")
-                return True
-                
-            except Exception as port_error:
-                print(f"❌ Port {port} failed for profile verification: {port_error}")
-                continue
-        
-        print("❌ All ports failed for profile verification")
-        return False
-        
-    except Exception as e:
-        print(f"❌ Unexpected error in send_verification_email_for_profile: {e}")
-        return False
-
-def send_reset_email(email, reset_code):
-    """Send password reset email using alternative SMTP ports"""
-    try:
-        smtp_server = "smtp.gmail.com"
-        sender_email = os.getenv('SMTP_EMAIL')
-        sender_password = os.getenv('SMTP_PASSWORD')
-        
-        print(f"📧 Sending password reset code to: {email}")
-        
-        if not sender_email or not sender_password:
-            print("❌ SMTP credentials missing from environment variables")
-            return False
-        
-        # Try different ports in order
-        smtp_ports = [587, 465, 25, 2525, 8025]
-        
-        for port in smtp_ports:
-            try:
-                print(f"🔄 Trying port {port} for password reset...")
-                
-                if port == 465:
-                    server = smtplib.SMTP_SSL(smtp_server, port, timeout=15)
-                else:
-                    server = smtplib.SMTP(smtp_server, port, timeout=15)
-                    if port == 587:
-                        server.starttls()
-                
-                server.login(sender_email, sender_password)
-                print(f"✅ Password reset - Connected via port {port}")
-                
-                message = MIMEMultipart("alternative")
-                message["Subject"] = "MANGOSQUEEN Password Reset"
-                message["From"] = sender_email
-                message["To"] = email
-                
-                html = f"""
-                <html>
-                <body>
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #6b46c1;">MANGOSQUEEN Password Reset</h2>
-                        <p>You requested to reset your password. Use the verification code below:</p>
-                        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; text-align: center; margin: 20px 0;">
-                            <h3 style="margin: 0; color: #6b46c1; font-size: 24px; letter-spacing: 5px;">{reset_code}</h3>
-                        </div>
-                        <p>This code will expire in 10 minutes for security reasons.</p>
-                        <p>If you didn't request this reset, please ignore this email.</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                        <p style="color: #718096; font-size: 14px;">MANGOSQUEEN Team</p>
-                    </div>
-                </body>
-                </html>
-                """
-                
-                message.attach(MIMEText(html, "html"))
-                server.sendmail(sender_email, email, message.as_string())
-                server.quit()
-                
-                print(f"🎉 Password reset email sent via port {port}!")
-                return True
-                
-            except Exception as port_error:
-                print(f"❌ Port {port} failed for password reset: {port_error}")
-                continue
-        
-        print("❌ All ports failed for password reset")
-        return False
-        
-    except Exception as e:
-        print(f"❌ Unexpected error in send_reset_email: {e}")
-        return False
-
-
-
 def send_verification_email(email, verification_code):
-    """Send verification email using alternative SMTP ports"""
     try:
         smtp_server = "smtp.gmail.com"
-        sender_email = os.getenv('SMTP_EMAIL')
-        sender_password = os.getenv('SMTP_PASSWORD')
+        smtp_port = 587
+        sender_email = os.getenv('SMTP_EMAIL', 'your_email@gmail.com')
+        sender_password = os.getenv('SMTP_PASSWORD', 'your_app_password')
         
-        print(f"📧 Attempting to send verification code to: {email}")
-        print(f"🔑 Generated code: {verification_code}")
-        print(f"🔧 SMTP Configuration - Server: {smtp_server}")
-        print(f"📧 Sender Email: {sender_email}")
-        print(f"🔐 SMTP Password set: {bool(sender_password)}")
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "MANGOSQUEEN Email Verification"
+        message["From"] = sender_email
+        message["To"] = email
         
-        if not sender_email or not sender_password:
-            print("❌ SMTP credentials missing from environment variables")
-            return False
+        html = f"""
+        <html>
+        <body>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #6b46c1;">MANGOSQUEEN Email Verification</h2>
+                <p>Thank you for registering with MANGOSQUEEN! Please use the verification code below to verify your email:</p>
+                <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; text-align: center; margin: 20px 0;">
+                    <h3 style="margin: 0; color: #6b46c1; font-size: 24px; letter-spacing: 5px;">{verification_code}</h3>
+                </div>
+                <p>This code will expire in 1 minute for security reasons.</p>
+                <p>If you didn't request this verification, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                <p style="color: #718096; font-size: 14px;">MANGOSQUEEN Team</p>
+            </div>
+        </body>
+        </html>
+        """
         
-        # Try different ports in order
-        smtp_ports = [587, 465, 25, 2525, 8025]
+        message.attach(MIMEText(html, "html"))
         
-        for port in smtp_ports:
-            try:
-                print(f"🔄 Trying port {port}...")
-                
-                # For port 465, use SMTP_SSL
-                if port == 465:
-                    print(f"🔒 Using SSL for port {port}")
-                    server = smtplib.SMTP_SSL(smtp_server, port, timeout=15)
-                else:
-                    print(f"🔓 Using TLS for port {port}")
-                    server = smtplib.SMTP(smtp_server, port, timeout=15)
-                    if port == 587:  # Only start TLS for port 587
-                        server.starttls()
-                
-                # Login
-                server.login(sender_email, sender_password)
-                print(f"✅ Successfully connected and logged in via port {port}")
-                
-                # Create email message
-                message = MIMEMultipart("alternative")
-                message["Subject"] = "MANGOSQUEEN Email Verification"
-                message["From"] = sender_email
-                message["To"] = email
-                
-                html = f"""
-                <html>
-                <body>
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #6b46c1;">MANGOSQUEEN Email Verification</h2>
-                        <p>Thank you for registering with MANGOSQUEEN! Please use the verification code below:</p>
-                        <div style="background-color: #f7fafc; border: 1px solid #e2e8f0; padding: 15px; text-align: center; margin: 20px 0;">
-                            <h3 style="margin: 0; color: #6b46c1; font-size: 24px; letter-spacing: 5px;">{verification_code}</h3>
-                        </div>
-                        <p>This code will expire in 10 minutes for security reasons.</p>
-                        <p>If you didn't request this verification, please ignore this email.</p>
-                        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
-                        <p style="color: #718096; font-size: 14px;">MANGOSQUEEN Team</p>
-                    </div>
-                </body>
-                </html>
-                """
-                
-                message.attach(MIMEText(html, "html"))
-                
-                # Send email
-                server.sendmail(sender_email, email, message.as_string())
-                server.quit()
-                
-                print(f"🎉 Email sent successfully using port {port}!")
-                return True
-                
-            except smtplib.SMTPAuthenticationError as auth_error:
-                print(f"❌ Port {port} - Authentication failed: {auth_error}")
-                break  # Don't try other ports if auth fails
-                
-            except smtplib.SMTPException as smtp_error:
-                print(f"❌ Port {port} - SMTP error: {smtp_error}")
-                continue  # Try next port
-                
-            except Exception as port_error:
-                print(f"❌ Port {port} - Connection error: {port_error}")
-                continue  # Try next port
-        
-        print("❌ All SMTP ports failed")
-        return False
-        
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, email, message.as_string())
+            
+        return True
     except Exception as e:
-        print(f"❌ Unexpected error in send_verification_email: {e}")
+        print(f"Error sending verification email: {e}")
         return False
-
-   
 
 @app.route('/send_verification', methods=['POST'])
 def send_verification():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'message': 'No data received'}), 400
-            
-        email = data.get('email')
-        
-        if not email:
-            return jsonify({'success': False, 'message': 'Email is required'}), 400
-        
-        # Validate email format
-        import re
-        email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        if not email_pattern.match(email):
-            return jsonify({'success': False, 'message': 'Please enter a valid email address'}), 400
+    data = request.get_json()
+    email = data.get('email')
     
-        # Check if email already exists
-        email_query = db.collection('user').where('email', '==', email).limit(1).get()
-        if len(email_query) > 0:
-            return jsonify({'success': False, 'message': 'Email already registered'}), 400
-        
-        # Generate verification code
-        code = ''.join(random.choices(string.digits, k=6))
-        
-        # Store verification code with expiration
-        verification_codes[email] = {
-            'code': code,
-            'expires': datetime.now() + timedelta(minutes=10)  # Increased to 10 minutes for debugging
-        }
-        
-        print(f"📧 Attempting to send verification code to: {email}")
-        print(f"🔑 Generated code: {code}")
-        
-        # Send verification email
-        email_sent = send_verification_email(email, code)
-        
-        if email_sent:
-            print(f"✅ Verification email sent successfully to: {email}")
-            return jsonify({
-                'success': True, 
-                'message': 'Verification code sent to your email'
-            })
-        else:
-            print(f"❌ Failed to send verification email to: {email}")
-            # Remove the code if email failed to send
-            if email in verification_codes:
-                del verification_codes[email]
-                
-            return jsonify({
-                'success': False, 
-                'message': 'Failed to send verification email. Please check your email address and try again.'
-            }), 500
-            
-    except Exception as e:
-        print(f"❌ Error in send_verification route: {str(e)}")
-        return jsonify({
-            'success': False, 
-            'message': 'An unexpected error occurred. Please try again.'
-        }), 500
-
-
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'})
+    
+    email_query = db.collection('user').where('email', '==', email).limit(1).get()
+    if len(email_query) > 0:
+        return jsonify({'success': False, 'message': 'Email already registered'})
+    
+    code = ''.join(random.choices(string.digits, k=6))
+    
+    verification_codes[email] = {
+        'code': code,
+        'expires': datetime.now() + timedelta(minutes=1)
+    }
+    
+    if send_verification_email(email, code):
+        return jsonify({'success': True, 'message': 'Verification code sent to your email'})
+    else:
+        return jsonify({'success': False, 'message': 'Failed to send verification email. Please try again.'})
 
 @app.route('/verify_code', methods=['POST'])
 def verify_code():
@@ -968,49 +700,6 @@ def verify_code():
     else:
         return jsonify({'success': False, 'message': 'Invalid verification code'})
 
-
-
-# Add this to restrict debug endpoints in production
-@app.route('/debug/smtp')
-def debug_smtp():
-    """Debug endpoint to check SMTP configuration"""
-    # Only allow in development
-    if os.getenv('ENVIRONMENT') == 'production':
-        return jsonify({'error': 'Not available in production'}), 404
-        
-    smtp_email = os.getenv('SMTP_EMAIL')
-    smtp_password = os.getenv('SMTP_PASSWORD')
-    
-    debug_info = {
-        'smtp_email_set': bool(smtp_email),
-        'smtp_password_set': bool(smtp_password),
-        'smtp_email_value': smtp_email[:3] + '...' + smtp_email.split('@')[1] if smtp_email else 'Not set',
-        'environment': 'Production' if not os.getenv('DEBUG') else 'Development'
-    }
-    
-    return jsonify(debug_info)
-
-@app.route('/test-email')
-def test_email():
-    """Test email sending functionality"""
-    # Only allow in development
-    if os.getenv('ENVIRONMENT') == 'production':
-        return jsonify({'error': 'Not available in production'}), 404
-        
-    test_email = "andayairishkate@gmail.com"
-    test_code = "123456"
-    
-    try:
-        result = send_verification_email(test_email, test_code)
-        return jsonify({
-            'success': result,
-            'message': 'Test email sent successfully' if result else 'Failed to send test email'
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error: {str(e)}'
-        })
 
 # -------------------- ML MODEL SETUP (UPDATED FOR TFLITE) --------------------
 # Define the base directory (where app.py is located)
