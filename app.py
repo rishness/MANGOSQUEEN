@@ -18,6 +18,7 @@ from PIL import Image
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 
+
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image 
 
@@ -38,18 +39,30 @@ app.config.update(
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# Check if Firebase is already initialized to prevent double-initialization errors
 if not firebase_admin._apps:
     try:
-        private_key = os.getenv('FIREBASE_PRIVATE_KEY')
+        # 1. GET VARIABLES
+        private_key_content = os.getenv('FIREBASE_PRIVATE_KEY')
         project_id = os.getenv('FIREBASE_PROJECT_ID')
         client_email = os.getenv('FIREBASE_CLIENT_EMAIL')
         
-        if private_key and project_id and client_email:
+        if private_key_content and project_id and client_email:
+            
+            # 2. DECODE KEY (The Fix)
+            try:
+                # Try to decode from Base64 (This handles your new .env format)
+                private_key = base64.b64decode(private_key_content).decode('utf-8')
+            except Exception:
+                # Fallback: If decoding fails, assume it's raw text (safety net)
+                private_key = private_key_content.replace('\\n', '\n')
+
+            # 3. INITIALIZE CREDENTIALS
             cred = credentials.Certificate({
                 "type": "service_account",
                 "project_id": project_id,
                 "private_key_id": os.getenv('FIREBASE_PRIVATE_KEY_ID'),
-                "private_key": private_key.replace('\\n', '\n'),
+                "private_key": private_key,  # Uses the decoded key from above
                 "client_email": client_email,
                 "client_id": os.getenv('FIREBASE_CLIENT_ID'),
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -58,13 +71,14 @@ if not firebase_admin._apps:
                 "client_x509_cert_url": os.getenv('FIREBASE_CLIENT_X509_CERT_URL'),
                 "universe_domain": "googleapis.com"
             })
+            
             firebase_admin.initialize_app(cred)
-            print("Firebase initialized successfully using Environment Variables.")
+            print("✅ Firebase initialized successfully.")
         else:
-            print("CRITICAL ERROR: Firebase environment variables are missing from .env file.")
+            print("❌ CRITICAL ERROR: Firebase environment variables are missing.")
             
     except Exception as e:
-        print(f"Failed to initialize Firebase: {str(e)}")
+        print(f"❌ Failed to initialize Firebase: {str(e)}")
 
 db = firestore.client()
 
