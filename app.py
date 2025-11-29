@@ -21,11 +21,22 @@ from firebase_admin import credentials, firestore, auth
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image 
 
+from functools import wraps
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-dev-key-if-env-fails')
+
+app.config.update(
+    SESSION_COOKIE_SECURE=True,  # Only send over HTTPS
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
+
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 if not firebase_admin._apps:
     try:
@@ -151,79 +162,221 @@ def logout():
     flash("Logged Out Successfully", "info")
     return redirect(url_for('home'))
 
+
+# -------------------- CORS HELPER FUNCTIONS --------------------
+
+
+def add_cors_headers(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Add CORS headers to response
+        origin = request.headers.get('Origin', '')
+        allowed_origins = [
+            'https://mangosqueen.onrender.com',  # Your actual Render domain
+            'http://localhost:5000',
+            'http://127.0.0.1:5000'
+        ]
+        
+        response_headers = {}
+        if origin in allowed_origins:
+            response_headers = {
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Credentials': 'true'
+            }
+        
+        # Handle preflight requests
+        if request.method == 'OPTIONS':
+            response = jsonify({'success': True})
+            response.headers.extend(response_headers)
+            return response
+        
+        # Call the actual route function
+        response = f(*args, **kwargs)
+        
+        # Add headers to the response
+        if isinstance(response, tuple):
+            # Response is a tuple (data, status, headers)
+            if len(response) == 3:
+                data, status, headers = response
+                if headers is None:
+                    headers = {}
+                headers.update(response_headers)
+                return data, status, headers
+            elif len(response) == 2:
+                data, status = response
+                return data, status, response_headers
+            else:
+                return response[0], 200, response_headers
+        else:
+            # Response is just data
+            return response, 200, response_headers
+    
+    return decorated_function
+
+
+
+
 # -------------------- CONTINUE WITH EMAIL ROUTES --------------------
-@app.route('/google_login', methods=['POST'])
+@app.route('/google_login', methods=['POST', 'OPTIONS'])
+@add_cors_headers
 def google_login():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'message': 'No data received'})
+            print("❌ Google Login: No JSON data received")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
             
         id_token = data.get('id_token')
         email = data.get('email')
         name = data.get('name')
         photo_url = data.get('photo_url')
 
+        print(f"🔐 Google login attempt for: {email}")
+        
         if not id_token:
-            return jsonify({'success': False, 'message': 'No ID token provided'})
+            print("❌ Google Login: No ID token provided")
+            return jsonify({'success': False, 'message': 'No ID token provided'}), 400
 
         try:
+            # Verify the token with enhanced error handling
             decoded_token = auth.verify_id_token(id_token)
             uid = decoded_token['uid']
+            print(f"✅ Token verified for UID: {uid}, Email: {decoded_token.get('email')}")
+            
+            # Additional verification: check if token email matches provided email
+            token_email = decoded_token.get('email')
+            if token_email and email and token_email.lower() != email.lower():
+                print(f"❌ Email mismatch: token={token_email}, provided={email}")
+                return jsonify({'success': False, 'message': 'Email verification failed'}), 401
+                
+        except ValueError as ve:
+            print(f"❌ Token validation error (ValueError): {ve}")
+            return jsonify({'success': False, 'message': 'Invalid token format'}), 401
+        except auth.ExpiredIdTokenError:
+            print("❌ Token has expired")
+            return jsonify({'success': False, 'message': 'Token has expired'}), 401
+        except auth.RevokedIdTokenError:
+            print("❌ Token has been revoked")
+            return jsonify({'success': False, 'message': 'Token has been revoked'}), 401
+        except auth.InvalidIdTokenError:
+            print("❌ Invalid token")
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
         except Exception as verify_error:
-            print(f"Token verification error: {verify_error}")
-            return jsonify({'success': False, 'message': 'Invalid ID token'})
+            print(f"❌ Token verification error: {verify_error}")
+            return jsonify({'success': False, 'message': 'Invalid ID token'}), 401
 
+        # Database operations
         users_ref = db.collection('user')
         query = users_ref.where('email', '==', email).limit(1)
         users = query.get()
 
-        if len(users) > 0:
-            user_doc = users[0]
-            user_id = user_doc.id
-            users_ref.document(user_id).update({
-                'datetime_login': datetime.now().isoformat(),
-                'auth_method': 'google'
-            })
-        else:
-            new_user = {
-                'name': name or 'Google User',
-                'username': email.split('@')[0],
-                'email': email,
-                'password': None,
-                'photo_url': photo_url,
-                'provider': 'google',
-                'firebase_uid': uid,
-                'auth_method': 'google',
-                'datetime_login': datetime.now().isoformat(),
-                'datetime_logout': None
-            }
-            try:
-                doc_ref = db.collection('user').add(new_user)
+        user_id = None
+        
+        try:
+            if len(users) > 0:
+                # Existing user
+                user_doc = users[0]
+                user_id = user_doc.id
+                print(f"🔄 Updating existing user: {user_id}")
+                
+                update_data = {
+                    'datetime_login': datetime.now().isoformat(),
+                    'auth_method': 'google'
+                }
+                
+                # Only update photo_url if it's provided and different
+                if photo_url:
+                    existing_user = user_doc.to_dict()
+                    if existing_user.get('photo_url') != photo_url:
+                        update_data['photo_url'] = photo_url
+                
+                users_ref.document(user_id).update(update_data)
+                print(f"✅ Updated existing user: {user_id}")
+                
+            else:
+                # New user
+                username_base = email.split('@')[0]
+                username = username_base
+                counter = 1
+                
+                # Ensure unique username
+                while True:
+                    username_query = users_ref.where('username', '==', username).limit(1).get()
+                    if len(username_query) == 0:
+                        break
+                    username = f"{username_base}{counter}"
+                    counter += 1
+                
+                new_user = {
+                    'name': name or 'Google User',
+                    'username': username,
+                    'email': email,
+                    'password': None,
+                    'photo_url': photo_url,
+                    'provider': 'google',
+                    'firebase_uid': uid,
+                    'auth_method': 'google',
+                    'datetime_login': datetime.now().isoformat(),
+                    'datetime_logout': None,
+                    'created_at': datetime.now().isoformat()
+                }
+                
+                doc_ref = users_ref.add(new_user)
                 user_id = doc_ref[1].id
-            except Exception as db_error:
-                print(f"Database error: {db_error}")
-                return jsonify({'success': False, 'message': 'Database error'})
+                print(f"✅ Created new user: {user_id}")
+                
+        except Exception as db_error:
+            print(f"❌ Database error: {db_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'success': False, 'message': 'Database error'}), 500
 
-        session['logged_in'] = True
-        session['username'] = email.split('@')[0]
-        session['email'] = email
-        session['user_id'] = user_id
-        session['login_message_shown'] = False
+        if not user_id:
+            print("❌ No user ID obtained from database operations")
+            return jsonify({'success': False, 'message': 'User creation failed'}), 500
 
-        # --- ADDED: Flash message for successful Google login ---
+        # Session management
+        try:
+            session['logged_in'] = True
+            session['username'] = email.split('@')[0]
+            session['email'] = email
+            session['user_id'] = user_id
+            session['login_message_shown'] = False
+            session['auth_method'] = 'google'
+            
+            # Set session permanent for longer duration
+            session.permanent = True
+            
+            print(f"✅ Session created for user: {user_id}")
+            
+        except Exception as session_error:
+            print(f"❌ Session creation error: {session_error}")
+            return jsonify({'success': False, 'message': 'Session error'}), 500
+
         flash("Logged In Successfully", "success")
 
-        return jsonify({
+        response_data = {
             'success': True, 
             'message': 'Google login successful',
-            'redirect_url': url_for('dashboard')
-        })
+            'redirect_url': url_for('dashboard'),
+            'user_id': user_id
+        }
+
+        print(f"🎉 Google login successful for user: {user_id}")
+        return jsonify(response_data)
 
     except Exception as e:
-        print(f"Google login error: {e}")
-        return jsonify({'success': False, 'message': f'Authentication failed: {str(e)}'})
-
+        print(f"❌ Unexpected error in google_login: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        return jsonify({
+            'success': False, 
+            'message': f'Authentication failed: {str(e)}'
+        }), 500
+        
 
 # -------------------- REGISTER ROUTES --------------------
 

@@ -736,54 +736,64 @@
             }
         }
 
-        // Google Sign In Logic
-        googleSignInButton.addEventListener('click', async () => {
-            try {
-                setButtonLoading(googleSignInButton, true, 'Connecting...');
-                const provider = new firebase.auth.GoogleAuthProvider();
-                const result = await firebase.auth().signInWithPopup(provider);
-                const idToken = await result.user.getIdToken();
+// Enhanced Google Sign In Logic
+googleSignInButton.addEventListener('click', async () => {
+    try {
+        setButtonLoading(googleSignInButton, true, 'Connecting...');
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // Add scopes if needed
+        provider.addScope('email');
+        provider.addScope('profile');
+        
+        const result = await firebase.auth().signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
 
-                // FIX: CLOCK SKEW WORKAROUND
-                await new Promise(resolve => setTimeout(resolve, 1000)); 
+        console.log('🔐 Google auth successful, sending to backend...');
 
-                // Send to Backend
-                const response = await fetch('/google_login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        id_token: idToken,
-                        email: result.user.email,
-                        name: result.user.displayName,
-                        photo_url: result.user.photoURL
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // --- MODIFIED: Removed the "Login Successful" message from container ---
-                    // Instead, update the button state to indicate redirection
-                    setButtonLoading(googleSignInButton, true, 'Redirecting...');
-                    
-                    setTimeout(() => window.location.href = data.redirect_url || '/dashboard', 1000);
-                } else {
-                    throw new Error(data.message || 'Authentication failed on server.');
-                }
-
-            } catch (error) {
-                console.error('Google Auth Error:', error);
-                let msg = "Google sign-in failed.";
-                if (error.code === 'auth/popup-closed-by-user') msg = "Sign-in cancelled.";
-                if (error.message.includes('Authentication failed on server')) msg = error.message;
-
-                showGoogleMessage(msg, 'error');
-                setButtonLoading(googleSignInButton, false);
-            }
+        // Send to Backend with better error handling
+        const response = await fetch('/google_login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id_token: idToken,
+                email: result.user.email,
+                name: result.user.displayName,
+                photo_url: result.user.photoURL
+            })
         });
+
+        const data = await response.json();
+        console.log('📡 Backend response:', data);
+
+        if (data.success) {
+            setButtonLoading(googleSignInButton, true, 'Redirecting...');
+            setTimeout(() => {
+                window.location.href = data.redirect_url || '/dashboard';
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Authentication failed on server.');
+        }
+
+    } catch (error) {
+        console.error('❌ Google Auth Error:', error);
+        
+        let userFriendlyMessage = "Google sign-in failed. Please try again.";
+        
+        if (error.code === 'auth/popup-closed-by-user') {
+            userFriendlyMessage = "Sign-in was cancelled.";
+        } else if (error.code === 'auth/network-request-failed') {
+            userFriendlyMessage = "Network error. Please check your connection.";
+        } else if (error.message.includes('Authentication failed on server')) {
+            userFriendlyMessage = "Server error. Please try again later.";
+        }
+        
+        showGoogleMessage(userFriendlyMessage, 'error');
+        setButtonLoading(googleSignInButton, false);
+    }
+});
 
         // Standard Login Loading
         if (loginForm) {
