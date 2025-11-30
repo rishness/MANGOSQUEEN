@@ -11,7 +11,11 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
@@ -20,7 +24,7 @@
 
     <style>
         /* --------------------------------------------------------- */
-        /* MANGOSQUEEN DESIGN SYSTEM                                */
+        /* MANGOSQUEEN DESIGN SYSTEM                                 */
         /* --------------------------------------------------------- */
         :root {
             --primary-color: #667eea;
@@ -42,7 +46,7 @@
         ::-webkit-scrollbar-thumb:hover { background: #a78bfa; }
 
         /* --------------------------------------------------------- */
-        /* NAVBAR STYLES                                            */
+        /* NAVBAR STYLES                                             */
         /* --------------------------------------------------------- */
         .navbar-top {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -136,30 +140,18 @@
         .menu-icon.open div:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); background: #667eea; }
 
         /* --------------------------------------------------------- */
-        /* RESPONSIVE HELPERS (FIXED: Tablet now uses Hamburger)    */
+        /* RESPONSIVE HELPERS                                        */
         /* --------------------------------------------------------- */
-        /* Default: Mobile/Tablet view (Hamburger visible, Desktop Links Hidden) */
-        .desktop-nav {
-            display: none; 
-        }
-        
-        .mobile-nav-toggle {
-            display: block; 
-        }
+        .desktop-nav { display: none; }
+        .mobile-nav-toggle { display: block; }
 
-        /* On Large screens (Laptops/Desktops 1024px+) ONLY */
         @media (min-width: 1024px) {
-            .desktop-nav {
-                display: flex !important;
-                align-items: center;
-            }
-            .mobile-nav-toggle {
-                display: none !important;
-            }
+            .desktop-nav { display: flex !important; align-items: center; }
+            .mobile-nav-toggle { display: none !important; }
         }
 
         /* --------------------------------------------------------- */
-        /* MODERN MOBILE MENU (Fixed & Bulletproof)                 */
+        /* MOBILE MENU                                               */
         /* --------------------------------------------------------- */
         .mobile-menu {
             position: absolute;
@@ -187,7 +179,6 @@
             visibility: visible;
         }
 
-        /* Force styling with !important to prevent Dashboard CSS conflicts */
         .mobile-nav-link {
             display: flex !important;
             align-items: center !important;
@@ -198,10 +189,9 @@
             transition: all 0.2s ease;
             border-radius: 12px;
             margin: 4px 12px;
-            gap: 16px !important; /* Forced Gap */
+            gap: 16px !important;
         }
 
-        /* Icon container fixed width */
         .mobile-nav-link i {
             width: 24px !important;
             text-align: center !important;
@@ -209,17 +199,15 @@
             display: inline-block !important;
         }
 
-        /* Standard Hover (Purple) */
         .mobile-nav-link:hover {
             background-color: #f3ebff !important;
             color: #764ba2 !important;
             transform: translateX(5px);
         }
 
-        /* Logout Hover (Red) - Overrides standard hover */
         .mobile-nav-link.logout-link:hover {
-            background-color: #fef2f2 !important; /* Red-50 */
-            color: #f87171 !important; /* Red-400 text on hover */
+            background-color: #fef2f2 !important;
+            color: #f87171 !important;
         }
 
         /* Footer */
@@ -233,10 +221,9 @@
             margin-top: auto; 
         }
 
-        /* -------------------------------------------------------------------------- */
-        /* --- Custom Modal Styles for Logout, Delete, Success (Encapsulated) ---     */
-        /* RENAMED from .custom-modal to .custom-app-modal to avoid Bootstrap conflict */
-        /* -------------------------------------------------------------------------- */
+        /* --------------------------------------------------------- */
+        /* MODAL STYLES                                              */
+        /* --------------------------------------------------------- */
         .custom-app-modal {
             display: none;
             position: fixed;
@@ -252,11 +239,8 @@
             animation: modalFadeIn 0.3s ease;
         }
 
-        .custom-app-modal.show {
-            display: flex;
-        }
+        .custom-app-modal.show { display: flex; }
 
-        /* All child selectors now use the unique prefix to avoid conflict */
         .custom-app-modal .modal-content {
             background: white;
             border-radius: 16px;
@@ -274,9 +258,7 @@
             margin-bottom: 1rem;
         }
 
-        .custom-app-modal .modal-icon.warning {
-            color: #FF9800; /* Amber for warning/confirmation */
-        }
+        .custom-app-modal .modal-icon.warning { color: #FF9800; }
 
         .custom-app-modal .modal-title {
             font-size: clamp(1.3rem, 3vw, 1.6rem);
@@ -340,26 +322,282 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
+
+        /* --------------------------------------------------------- */
+        /* CHATBOT STYLES & ANIMATIONS                               */
+        /* --------------------------------------------------------- */
         
-        /* Update responsive styling to use the new class */
-        @media (max-width: 480px) {
-             .custom-app-modal .modal-content {
-                width: 85%;
-                padding: 1.5rem;
+        /* 1. CHAT TOGGLER BUTTON */
+        .chatbot-toggler {
+            position: fixed;
+            bottom: 30px;
+            right: 35px;
+            outline: none;
+            border: none;
+            height: 60px;
+            width: 60px;
+            display: flex;
+            padding: 0;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow: visible; /* Important for the floating bubble */
+        }
+
+        .chatbot-toggler:hover {
+            transform: scale(1.1);
+        }
+
+        /* 2. ANIMATED ROBOT ICON ("Nagalaw ng konti") */
+        @keyframes robot-bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-3px) rotate(3deg); }
+        }
+
+        .chatbot-toggler .fa-robot {
+            color: white;
+            font-size: 2rem; /* Nice big robot */
+            animation: robot-bounce 2.5s ease-in-out infinite;
+        }
+
+        /* 3. FLOATING QUESTION MARK BUBBLE */
+        .help-bubble {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            width: 22px;
+            height: 22px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #764ba2; /* Purple text */
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid #764ba2;
+            z-index: 1002;
+            pointer-events: none;
+            /* Animation: Wait 3s, Pop In, Stay, Pop Out, Repeat */
+            animation: bubble-pop-loop 6s infinite ease-in-out;
+        }
+
+        @keyframes bubble-pop-loop {
+            0%, 40% { 
+                transform: scale(0); 
+                opacity: 0; 
+            }
+            45% { 
+                transform: scale(1.1); 
+                opacity: 1; 
+            }
+            50%, 90% { 
+                transform: scale(1); 
+                opacity: 1; 
+            }
+            95%, 100% { 
+                transform: scale(0); 
+                opacity: 0; 
             }
         }
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .custom-app-modal .modal-content {
-                width: 450px;
-            }
+
+        /* 4. CHAT WINDOW */
+        .chatbot {
+            position: fixed;
+            right: 35px;
+            bottom: 100px;
+            width: 380px;
+            height: 500px;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.5);
+            transform-origin: bottom right;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: all 0.2s ease-in-out;
+            z-index: 999;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
         }
-        @media (min-width: 1441px) {
-            .custom-app-modal .modal-content {
-                width: 500px;
-            }
+
+        body.show-chatbot .chatbot {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
         }
-        /* --- End Custom Modal Styles --- */
+
+        /* HEADER */
+        .chatbot header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0; 
+        }
+
+        .chatbot header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chatbot header .close-btn {
+            color: #fff;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: transform 0.2s;
+        }
         
+        .chatbot header .close-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* CHATBOX */
+        .chatbot .chatbox {
+            flex-grow: 1; 
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .chatbot :where(.chatbox, textarea)::-webkit-scrollbar { width: 6px; }
+        .chatbot :where(.chatbox, textarea)::-webkit-scrollbar-track { background: transparent; }
+        .chatbot :where(.chatbox, textarea)::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+        .chatbox .chat {
+            display: flex;
+            list-style: none;
+            margin-bottom: 15px;
+        }
+
+        .chatbox .outgoing {
+            justify-content: flex-end;
+        }
+        
+        .chatbox .incoming {
+            justify-content: flex-start;
+        }
+
+        /* BOT AVATAR CONTAINER (Inside Chat) */
+        .chatbox .incoming .bot-avatar-container {
+            width: 35px;
+            height: 35px;
+            margin-right: 10px;
+            align-self: flex-end;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            color: white;
+        }
+
+        /* BUBBLE STYLING */
+        .chatbox .chat .msg-bubble {
+            white-space: pre-wrap;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            max-width: 80%;
+            line-height: 1.5;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .chatbox .incoming .msg-bubble {
+            background: #e5e7eb;
+            color: #1f2937;
+            border-radius: 20px 20px 20px 5px;
+        }
+
+        .chatbox .outgoing .msg-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 20px 20px 5px 20px;
+        }
+
+        .chatbox .incoming .msg-bubble ul { margin-left: 20px; list-style-type: disc; }
+        .chatbox .incoming .msg-bubble strong { font-weight: 700; color: #581c87; }
+        .chatbox .incoming .msg-bubble p { margin: 0; padding: 0; }
+
+        .typing-dots { display: inline-flex; gap: 4px; padding: 5px 0; align-items: center; }
+        .typing-dots span { width: 6px; height: 6px; background: #6b7280; border-radius: 50%; animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+        /* INPUT AREA */
+        .chatbot .chat-input {
+            flex-shrink: 0; 
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #eee;
+        }
+
+        .chat-input textarea {
+            height: 45px;
+            width: 100%;
+            border: 1px solid #ccc;
+            outline: none;
+            resize: none;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            border-radius: 25px; 
+            background: #fff;
+            color: #333;
+            transition: border-color 0.3s;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+        
+        .chat-input textarea:focus {
+            border-color: #764ba2;
+        }
+
+        .chat-input span {
+            color: #fff;
+            background: #764ba2; 
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .chat-input span:hover {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 490px) {
+            .chatbot-toggler { right: 20px; bottom: 20px; }
+            .chatbot { right: 0; bottom: 0; height: 100%; border-radius: 0; width: 100%; }
+            .chatbot .chatbox { height: calc(100% - 130px); }
+            body.show-chatbot .chatbot-toggler { display: none; }
+        }
     </style>
 </head>
 
@@ -463,6 +701,36 @@
         {% block content %}{% endblock %}
     </main>
 
+    <button class="chatbot-toggler">
+        <i class="fas fa-robot"></i>
+        
+        <div class="help-bubble">
+            <i class="fas fa-question"></i>
+        </div>
+    </button>
+
+    <div class="chatbot">
+        <header>
+            <h2>
+                <i class="fas fa-robot" style="font-size: 1.2rem;"></i>
+                Mangosteenify
+            </h2>
+            <span class="close-btn material-symbols-outlined"><i class="fas fa-times"></i></span>
+        </header>
+        <ul class="chatbox">
+            <li class="chat incoming">
+                <div class="bot-avatar-container">
+                    <i class="fas fa-robot" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="msg-bubble">Hi there! 👋<br>I'm your MangosQueen assistant. Ask me anything about Mangosteen fruits, diseases, or how to use this app!</div>
+            </li>
+        </ul>
+        <div class="chat-input">
+            <textarea placeholder="Ask about mangosteen..." spellcheck="false" required></textarea>
+            <span id="send-btn" class="material-symbols-rounded"><i class="fas fa-paper-plane"></i></span>
+        </div>
+    </div>
+
     <footer class="footer-custom">
         <div class="container mx-auto px-4">
             <p class="mb-2 font-semibold text-gray-700">MANGOSQUEEN</p>
@@ -492,15 +760,14 @@
             </div>
         </div>
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
         // --- CUSTOM LOGOUT MODAL JS ---
         function showLogoutConfirmModal(event) {
             if (event) {
-                // Prevent navigation/page change
                 event.preventDefault(); 
-                // Stop the click from closing the mobile menu immediately
                 event.stopPropagation();
             }
             const modal = document.getElementById('logout-confirm-modal');
@@ -515,52 +782,149 @@
                 modal.classList.remove('show');
             }
         }
-        // --- END CUSTOM LOGOUT MODAL JS ---
 
+        // --- CHATBOT JS ---
+        const chatbotToggler = document.querySelector(".chatbot-toggler");
+        const closeBtn = document.querySelector(".close-btn");
+        const chatbox = document.querySelector(".chatbox");
+        const chatInput = document.querySelector(".chat-input textarea");
+        const sendChatBtn = document.querySelector(".chat-input span");
+
+        let userMessage = null;
+
+        // UPDATED: Create Chat Element
+        const createChatLi = (message, className) => {
+            const chatLi = document.createElement("li");
+            chatLi.classList.add("chat", className);
+            
+            let chatContent;
+            
+            if(className === "outgoing") {
+                // User Message
+                chatContent = `<div class="msg-bubble"></div>`;
+            } else {
+                // Bot Message: Use Standard Robot Icon
+                chatContent = `
+                <div class="bot-avatar-container">
+                    <i class="fas fa-robot" style="font-size: 1.2rem;"></i>
+                </div>
+                <div class="msg-bubble"></div>`;
+            }
+            
+            chatLi.innerHTML = chatContent;
+            
+            if(className === "outgoing") {
+                chatLi.querySelector(".msg-bubble").textContent = message;
+            } else {
+                chatLi.querySelector(".msg-bubble").innerHTML = message;
+            }
+            return chatLi;
+        }
+
+        const generateResponse = (chatElement) => {
+            const API_URL = "/api/chat"; 
+            const messageElement = chatElement.querySelector(".msg-bubble");
+
+            const requestOptions = {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: userMessage
+                })
+            }
+
+            fetch(API_URL, requestOptions)
+                .then(res => res.json())
+                .then(data => {
+                    if(data.reply) {
+                        messageElement.innerHTML = marked.parse(data.reply.trim());
+                    } else {
+                        messageElement.textContent = "I didn't get a response. Please try again.";
+                        messageElement.classList.add("error");
+                    }
+                })
+                .catch(() => {
+                    messageElement.classList.add("error");
+                    messageElement.textContent = "Oops! Something went wrong. Please try again.";
+                })
+                .finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
+        }
+
+        const handleChat = () => {
+            userMessage = chatInput.value.trim();
+            if(!userMessage) return;
+
+            chatInput.value = "";
+            chatInput.style.height = "45px"; 
+
+            // 1. Append User Message
+            chatbox.appendChild(createChatLi(userMessage, "outgoing"));
+            chatbox.scrollTo(0, chatbox.scrollHeight);
+
+            // 2. Append Typing Animation
+            setTimeout(() => {
+                const typingDotsHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+                const incomingChatLi = createChatLi(typingDotsHTML, "incoming");
+                chatbox.appendChild(incomingChatLi);
+                chatbox.scrollTo(0, chatbox.scrollHeight);
+                
+                // 3. Fetch Response
+                generateResponse(incomingChatLi);
+            }, 600);
+        }
+
+        // Auto-resize for pill input
+        chatInput.addEventListener("input", () => {
+            chatInput.style.height = "45px"; 
+            if(chatInput.scrollHeight > 45) {
+               chatInput.style.height = `${Math.min(chatInput.scrollHeight, 100)}px`;
+            }
+        });
+
+        chatInput.addEventListener("keydown", (e) => {
+            if(e.key === "Enter" && !e.shiftKey && window.innerWidth > 800) {
+                e.preventDefault();
+                handleChat();
+            }
+        });
+
+        sendChatBtn.addEventListener("click", handleChat);
+        closeBtn.addEventListener("click", () => document.body.classList.remove("show-chatbot"));
+        chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+
+        // --- EXISTING MOBILE MENU JS ---
         document.addEventListener('DOMContentLoaded', function() {
             const mobileBtn = document.getElementById('mobileMenuBtn');
             const mobileMenu = document.getElementById('mobileMenu');
-            const navbar = document.getElementById('mainNavbar');
-
             if(mobileBtn && mobileMenu) {
-                // Toggle Menu Function
                 function toggleMenu() {
                     const isOpen = mobileMenu.classList.contains('show');
-                    
                     if (isOpen) {
-                        // Close
                         mobileMenu.classList.remove('show');
                         mobileBtn.classList.remove('open');
                     } else {
-                        // Open
                         mobileMenu.classList.add('show');
                         mobileBtn.classList.add('open');
                     }
                 }
-
-                // Click on Hamburger
                 mobileBtn.addEventListener('click', (e) => {
                     e.stopPropagation(); 
                     toggleMenu();
                 });
-
-                // Click Outside Logic (Closes menu when clicking content or outside)
                 document.addEventListener('click', (e) => {
                     const isClickInsideMenu = mobileMenu.contains(e.target);
                     const isClickOnBtn = mobileBtn.contains(e.target);
                     const isMenuOpen = mobileMenu.classList.contains('show');
-
                     if (isMenuOpen && !isClickInsideMenu && !isClickOnBtn) {
                         mobileMenu.classList.remove('show');
                         mobileBtn.classList.remove('open');
                     }
                 });
-
-                // Close menu when a regular link is clicked
                 const links = mobileMenu.querySelectorAll('a');
                 links.forEach(link => {
                     link.addEventListener('click', () => {
-                        // Only close the menu if the link is NOT the logout link (which opens the modal via JS)
                         if (link.getAttribute('onclick') !== 'showLogoutConfirmModal(event)') {
                             mobileMenu.classList.remove('show');
                             mobileBtn.classList.remove('open');
@@ -569,11 +933,9 @@
                 });
             }
 
-            // ADDED: Close the custom logout modal when clicking the background/overlay
             const logoutModal = document.getElementById('logout-confirm-modal');
             if (logoutModal) {
                 logoutModal.addEventListener('click', function(e) {
-                    // Check if the click target is the modal container itself (the dark overlay)
                     if (e.target === this) {
                         closeLogoutConfirmModal();
                     }

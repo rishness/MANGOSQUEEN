@@ -12,19 +12,94 @@ import random
 import string
 import smtplib
 import numpy as np
+import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from PIL import Image
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 import tensorflow as tf
-from tensorflow.keras.preprocessing import image 
 from functools import wraps
 
+# Define base directory and load .env
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 app = Flask(__name__)
+
+# ==========================================
+#  GEMINI AI & CHATBOT CONFIGURATION (UPDATED)
+# ==========================================
+
+# 1. Load API Key
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+
+# 2. Define System Instructions (The "Brain")
+# UPDATED: Enforces strict app procedures and dynamic language matching.
+SYSTEM_INSTRUCTION_TEXT = """
+You are "Mangosteenify", the expert assistant for the MangosQueen application.
+
+YOUR STRICT KNOWLEDGE BASE:
+1. Mangosteen Farming (Planting, Harvest, Health Benefits).
+2. Mangosteen Diseases (Anthracnose, Dry Rot, Gummosis).
+3. MangosQueen System Features (Scanning, Real-time Detection, Sorting).
+
+STRICT RULES FOR ANSWERING:
+1. LANGUAGE MATCHING (CRITICAL): 
+   - If the user asks in **ENGLISH**, answer in **ENGLISH**.
+   - If the user asks in **TAGALOG**, answer in **TAGALOG**.
+   - If the user uses **TAGLISH**, answer in **TAGLISH**.
+2. LENGTH: Keep answers SHORT, CONCISE, and DIRECT (Max 3-4 sentences). Use bullet points.
+3. REFUSAL: If the topic is not about Mangosteen or this App, politely refuse in the user's language.
+
+SPECIFIC ANSWERS FOR APP USAGE:
+If the user asks "How to use the app?", "Paano gamitin?", or about features, use this logic:
+
+(English Context):
+"To use MangosQueen:
+1. **Register & Login** to your account.
+2. Go to the **Dashboard** to access features.
+3. Use **Scan** to detect diseases via **Upload Image**, **Camera Capture**, or **Real-time Detection**.
+4. Use the **Fruit Sorting** mechanism to categorize fruits based on **disease** and **ripeness**."
+4. Use can go to **About Page** to know **how to use** this system."
+
+(Tagalog Context):
+"Para gamitin ang MangosQueen:
+1. Mag-**Register at Login** muna sa iyong account.
+2. Pumunta sa **Dashboard** para makita ang features.
+3. Gamitin ang **Scan** para mag-detect ng sakit gamit ang **Upload Image**, **Camera**, o **Real-time Detection**.
+4. Gamitin ang **Fruit Sorting** mechanism para mai-hiwalay ang prutas base sa **sakit** at **pagkahinog**."
+4. Maari kang pumunta sa **About** page mas malaman mo kung paano gamitin ang sistema na ito."
+"""
+
+# 3. Initialize Gemini Model
+model = None
+if GOOGLE_API_KEY:
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        
+        # Configure Model with System Instructions
+        model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash", 
+            system_instruction=SYSTEM_INSTRUCTION_TEXT, 
+            generation_config={
+                "temperature": 0.7,
+                "top_p": 1,
+                "top_k": 1,
+                "max_output_tokens": 300, 
+            }
+        )
+        print("✅ Gemini AI Model (gemini-2.0-flash) configured successfully.")
+    except Exception as e:
+        print(f"❌ Error configuring Gemini model: {e}")
+        model = None
+else:
+    print("⚠️ WARNING: GOOGLE_API_KEY not found in .env file.")
+
+# ==========================================
+# END OF CONFIGURATION
+# ==========================================
+
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-dev-key-if-env-fails')
 
 app.config.update(
@@ -85,8 +160,6 @@ def home():
 def dashboard():
     if not get_logged_in_status():
         return render_template('dashboard.html', logged_in=False)
-
-    # Note: No flash messages here. They are handled in the login routes.
     return render_template('dashboard.html', logged_in=True)
 
 
@@ -121,7 +194,6 @@ def login():
                     'datetime_login': datetime.now().isoformat()
                 })
                 
-                # --- ADDED: Flash message for successful manual login ---
                 flash("Logged In Successfully!", "success")
                 return redirect(url_for('dashboard'))
             else:
@@ -281,7 +353,6 @@ def google_login():
                     'auth_method': 'google'
                 }
                 
-                # Only update photo_url if it's provided and different
                 if photo_url:
                     existing_user = user_doc.to_dict()
                     if existing_user.get('photo_url') != photo_url:
@@ -494,7 +565,6 @@ def check_email():
 reset_codes = {}
 
 def send_reset_email(email, reset_code):
-    """Send password reset email with verification code"""
     try:
         smtp_server = "smtp.gmail.com"
         smtp_port = 587
@@ -1525,7 +1595,57 @@ def delete_scan(scan_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# -------------------- ROBUST CHATBOT ROUTE (FIXED) --------------------
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    # 1. Check if Model is loaded
+    if not model:
+        print("❌ ERROR: Gemini Model is not configured. Check your API Key.")
+        return jsonify({'reply': "System Error: API Key is missing or invalid."})
 
+    try:
+        data = request.get_json()
+        user_message = data.get('message')
+
+        if not user_message:
+            return jsonify({'error': 'No message provided'}), 400
+
+        print(f"📩 Received message: {user_message}") 
+
+        # 2. Get History (Memory)
+        chat_history = session.get('chat_history', [])
+        
+        # 3. Start Chat Session
+        # Note: We don't need to manually inject the SYSTEM_INSTRUCTION_TEXT here anymore
+        # because it is now configured globally in the 'model' object.
+        chat_session = model.start_chat(history=chat_history)
+        
+        # 4. Send Message
+        response = chat_session.send_message(user_message)
+        
+        # 5. Extract Text SAFELY
+        try:
+            bot_reply = response.text
+        except ValueError:
+            print("⚠️ WARNING: Gemini blocked the response due to safety filters.")
+            bot_reply = "I apologize, but I cannot answer that query due to safety guidelines."
+
+        print(f"🤖 Bot Reply: {bot_reply}") 
+
+        # 6. Update History
+        chat_history.append({'role': 'user', 'parts': [user_message]})
+        chat_history.append({'role': 'model', 'parts': [bot_reply]})
+        session['chat_history'] = chat_history[-20:] # Keep last 20 turns
+        session.modified = True
+
+        return jsonify({'reply': bot_reply})
+
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in /api/chat: {e}")
+        import traceback
+        traceback.print_exc() 
+        return jsonify({'reply': f"Error: {str(e)}"}), 500
+    
 # -------------------- ERROR HANDLERS --------------------
 
 @app.errorhandler(404)
