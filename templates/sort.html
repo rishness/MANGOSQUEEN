@@ -8,8 +8,9 @@
 
 <style>
     /* ------------------------------------------------------------------ */
-    /* --- I. UNIVERSAL & BASE STYLES (From scan.html for consistency) -- */
+    /* --- I. UNIVERSAL & BASE STYLES (Matched to scan.html) ------------ */
     /* ------------------------------------------------------------------ */
+    
     /* Page load transition */
     body {
         animation: pageLoadFade 0.3s ease-in;
@@ -28,7 +29,7 @@
         padding-bottom: 2rem;
     }
 
-    /* Main Card Container - Matches Scan Page */
+    /* Main Card Container */
     .scan-container {
         max-width: 1700px;
         width: 100%;
@@ -45,7 +46,7 @@
 
     .scan-container h2 {
         margin-bottom: 0.5rem;
-        /* Fluid Typography from scan.html */
+        color: #667eea;
         font-size: clamp(1.8rem, 4vw, 2.5rem); 
         font-weight: 800;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -57,12 +58,11 @@
     .scan-description {
         color: #666;
         margin-bottom: 2rem;
-        /* Fluid Typography from scan.html */
         font-size: clamp(0.9rem, 2vw, 1.1rem); 
         font-weight: 500;
     }
 
-    /* --- Button Styles (Adapted from Scan) --- */
+    /* --- Button Styles --- */
     .control-btn {
         padding: 0.8rem 1.8rem;
         border-radius: 10px;
@@ -73,7 +73,6 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        /* Fluid Typography from scan.html */
         font-size: clamp(0.85rem, 2vw, 1rem); 
         background: white;
         border: 2px solid transparent; 
@@ -127,10 +126,12 @@
     }
     
     /* --- Layout Sections --- */
+    /* Default is stacked (Mobile/Tablet) */
     .sort-grid {
-        display: grid;
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 1.5rem;
+        width: 100%;
     }
 
     .content-section {
@@ -142,7 +143,7 @@
     }
 
     .section-title {
-        font-size: 1.1rem;
+        font-size: clamp(1rem, 2.5vw, 1.1rem);
         font-weight: 700;
         color: #4a5568;
         margin-bottom: 1.2rem;
@@ -153,7 +154,7 @@
         display: inline-block;
     }
     
-    /* --- Camera Area (Matches Scan Page) --- */
+    /* --- Camera Area --- */
     .camera-feed-container {
         width: 100%;
         min-height: 350px;
@@ -170,7 +171,6 @@
     }
     
     .camera-placeholder i {
-        /* Fluid size for camera icon */
         font-size: clamp(2rem, 8vw, 4rem); 
     }
 
@@ -211,8 +211,7 @@
     }
 
     .stat-value {
-        /* Fluid size for counts */
-        font-size: clamp(2rem, 4vw, 3rem);
+        font-size: clamp(1.8rem, 4vw, 3rem);
         font-weight: 800;
         line-height: 1;
     }
@@ -256,7 +255,6 @@
     .count-update { 
         animation: countPulse 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
     }
-    /* Define the CSS Variable for dynamic color in animation */
     :root { 
         --primary-color: #667eea; 
         --success-color: #28a745; 
@@ -264,13 +262,13 @@
     }
     @keyframes countPulse { 
         0% { transform: scale(1); } 
-        50% { transform: scale(1.3); color: var(--success-color); } /* Use success color during good update */
+        50% { transform: scale(1.3); color: var(--success-color); } 
         100% { transform: scale(1); } 
     }
 
 
     /* ------------------------------------------------------------------ */
-    /* --- II. MODAL STYLES (Copied from scan.html) --------------------- */
+    /* --- II. MODAL STYLES (From scan.html) ---------------------------- */
     /* ------------------------------------------------------------------ */
     .custom-modal {
         display: none;
@@ -360,101 +358,182 @@
     }
 
     /* ------------------------------------------------------------------ */
-    /* --- III. MEDIA QUERIES (Enhanced Responsiveness) ------------------- */
+    /* --- III. RESPONSIVE DESIGN (Applied from scan.html) -------------- */
     /* ------------------------------------------------------------------ */
     
-    /* Mobile Portrait (320px - 480px) - Enhanced for small devices */
+    /* Mobile Portrait (320px - 480px) */
     @media (max-width: 480px) {
         .scan-page-container {
             margin-top: 0.5rem;
         }
+
         .scan-container {
             padding: 1rem;
             border-radius: 12px;
         }
-        .sort-grid {
-            gap: 1rem;
+
+        .scan-container h2 {
+            font-size: 1.5rem;
         }
+
+        /* Stack buttons vertically for easier touch access */
+        .controls-wrapper {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .control-btn {
+            width: 100%;
+            padding: 0.8rem;
+        }
+
+        /* Stack status cards */
+        .status-grid {
+            grid-template-columns: 1fr;
+            gap: 0.8rem;
+        }
+
         .content-section {
             padding: 1rem;
         }
-        .control-btn {
-            width: 100%;
-            padding: 0.7rem 1.2rem;
-            font-size: 0.85rem;
-        }
-        .controls-wrapper {
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-        .status-grid {
-            grid-template-columns: 1fr; /* Stack stats on very small screens */
-            gap: 0.8rem;
-        }
+
         .chart-wrapper {
             height: 250px;
         }
+
         .camera-feed-container {
             min-height: 250px;
             max-height: 350px;
         }
+        
+        .modal-content {
+            width: 85%;
+            padding: 1.5rem;
+        }
     }
 
-    /* Mobile Landscape / Tablet Portrait (481px - 768px) */
+    /* Mobile Landscape / Small Tablet (481px - 768px) */
     @media (min-width: 481px) and (max-width: 768px) {
         .scan-container {
             padding: 1.2rem;
         }
+
         .controls-wrapper {
             flex-wrap: wrap;
         }
+
+        .control-btn {
+            flex: 1;
+            min-width: 150px;
+        }
+
         .chart-wrapper {
             height: 280px;
         }
+
         .camera-feed-container {
             min-height: 300px;
             max-height: 400px;
         }
+        
+        .modal-content {
+            width: 80%;
+        }
     }
 
-    /* Tablet Landscape (769px - 1023px) */
-    @media (min-width: 769px) and (max-width: 1023px) {
+    /* Tablet Landscape (769px - 1024px) */
+    @media (min-width: 769px) and (max-width: 1024px) {
         .scan-container {
             padding: 1.5rem;
         }
-        /* Default stacked layout is fine, but make stats look good */
-        .status-grid {
-            grid-template-columns: 1fr 1fr;
+
+        .camera-feed-container {
+            min-height: 400px;
+            max-height: 500px;
         }
-    }
-    
-    /* Desktop (1024px+) */
-    @media (min-width: 1024px) {
+
+        /* Grid starts to form a 2-column layout */
         .sort-grid {
-            grid-template-columns: 1.2fr 0.8fr; /* Camera larger, Stats smaller */
-            /* Ensure the layout stacks logically */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             grid-template-areas: 
                 "controls controls"
-                "camera status"
-                "analytics analytics";
+                "camera camera"
+                "status analytics";
         }
         
         .section-controls { grid-area: controls; }
         .section-camera { grid-area: camera; }
         .section-status { grid-area: status; }
         .section-analytics { grid-area: analytics; }
+        
+        .modal-content {
+            width: 450px;
+        }
+    }
+
+    /* Desktop (1025px - 1440px) */
+    @media (min-width: 1025px) and (max-width: 1440px) {
+        /* Full Dashboard Layout */
+        .sort-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-areas: 
+                "controls controls"
+                "camera status"
+                "analytics analytics";
+            gap: 1.5rem;
+        }
+        
+        .section-controls { grid-area: controls; }
+        .section-camera { grid-area: camera; }
+        .section-status { grid-area: status; }
+        .section-analytics { grid-area: analytics; }
+
+        .camera-feed-container {
+            height: 100%;
+            min-height: 450px;
+            max-height: 550px;
+        }
     }
 
     /* Large Desktop (1441px+) */
     @media (min-width: 1441px) {
-        .sort-grid {
-            gap: 2rem;
-        }
         .scan-container {
             padding: 2.5rem;
         }
+
+        .sort-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            grid-template-areas: 
+                "controls controls"
+                "camera status"
+                "analytics analytics";
+            gap: 2rem;
+        }
+
+        .section-controls { grid-area: controls; }
+        .section-camera { grid-area: camera; }
+        .section-status { grid-area: status; }
+        .section-analytics { grid-area: analytics; }
+
         .camera-feed-container {
+            max-width: 100%;
+            min-height: 500px;
             max-height: 600px;
+        }
+        
+        .modal-content {
+            width: 500px;
+        }
+    }
+
+    /* High DPI screens */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .camera-feed-container {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
     }
 </style>
@@ -571,7 +650,7 @@
         // Get Modal elements
         const errorModal = document.getElementById('error-modal');
 
-        // Initialize Charts (Initializes with 0s) - [Code omitted for brevity, assumed correct]
+        // Initialize Charts (Initializes with 0s)
         const pieCtx = document.getElementById('sorting-pie-chart').getContext('2d');
         const pieChart = new Chart(pieCtx, {
             type: 'doughnut', 
@@ -595,7 +674,7 @@
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] }, suggestedMax: 10 }, x: { grid: { display: false } } } }
         });
 
-        // --- Modal Functions (Code omitted for brevity, assumed correct) ---
+        // --- Modal Functions ---
         
         function showErrorModal(message) {
             document.getElementById('error-modal-message').textContent = message;
@@ -667,9 +746,6 @@
                 } else {
                     // B. Connection Success: (For future implementation)
                     sortingActive = true;
-                    // Final active UI update (if needed)
-                    // Real device connection logic would start here
-                    
                 }
             }, 3000); // 3 seconds delay
         });
@@ -711,7 +787,7 @@
             }
         });
         
-        // Reset Handler (Code remains the same)
+        // Reset Handler
         resetBtn.addEventListener('click', function() {
             // 1. Reset Counter Displays
             document.getElementById('good-count').textContent = '0';
