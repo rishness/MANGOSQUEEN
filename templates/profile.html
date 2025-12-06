@@ -193,6 +193,15 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+  
+  /* Error Text below input */
+  .input-error-text {
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+    display: none;
+    font-weight: 600;
+  }
 
   /* --- ENHANCED MODAL STYLES --- */
   .custom-modal {
@@ -202,7 +211,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Slightly lighter overlay */
+    background: rgba(0, 0, 0, 0.5); 
     backdrop-filter: blur(5px);
     z-index: 9999;
     justify-content: center;
@@ -240,6 +249,7 @@
   .modal-icon.success { color: #10b981; }
   .modal-icon.error { color: #ef4444; }
   .modal-icon.info { color: #3b82f6; }
+  .modal-icon.question { color: #8b5cf6; }
 
   .modal-title {
     font-size: 1.6rem;
@@ -271,6 +281,24 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(102, 126, 234, 0.35);
   }
+  
+  /* Buttons for Confirmation Modal */
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .modal-btn.secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+    box-shadow: none;
+  }
+  
+  .modal-btn.secondary:hover {
+    background: #cbd5e0;
+    transform: translateY(-2px);
+  }
 
   @media (max-width: 992px) {
     .profile-content { grid-template-columns: 1fr; gap: 1.5rem; }
@@ -291,11 +319,9 @@
             </div>
         </div>
 
-        <form id="profileForm" method="POST" style="display: contents;">
-            <input type="hidden" name="action" value="update_profile">
+        <form id="profileForm" style="display: contents;">
             <input type="hidden" id="original_name" value="{{ user.name }}">
             <input type="hidden" id="original_username" value="{{ user.username }}">
-            <input type="hidden" id="original_email" value="{{ user.email }}">
             <input type="hidden" id="auth_method" value="{{ user.auth_method if user.auth_method else 'manual' }}">
 
             <div class="profile-content">
@@ -374,6 +400,7 @@
                             <div class="form-group mt-3" id="verification-code-row" style="display: none; animation: fadeIn 0.3s;">
                                 <label class="form-label-custom">Enter 6-Digit Code</label>
                                 <input type="text" class="form-control-custom" id="verification_code" name="verification_code" maxlength="6" style="letter-spacing: 3px; text-align: center; font-size: 1.1rem;" placeholder="000000">
+                                <div id="verification-error" class="input-error-text"></div>
                             </div>
                         </div>
 
@@ -394,6 +421,18 @@
     </div>
 </div>
 
+<div id="confirmation-modal" class="custom-modal">
+    <div class="modal-content">
+        <div class="modal-icon question"><i class="fas fa-question-circle"></i></div>
+        <h3 class="modal-title">Confirm Update</h3>
+        <p class="modal-message">Are you sure you want to update your profile?</p>
+        <div class="modal-actions">
+            <button class="modal-btn secondary" onclick="closeConfirmationModal()">Cancel</button>
+            <button class="modal-btn" id="confirm-update-btn">Yes, Update</button>
+        </div>
+    </div>
+</div>
+
 <div id="server-messages" style="display:none;">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -405,6 +444,10 @@
 </div>
 
 <script>
+    // Global variable to hold payload between validation and confirmation
+    let pendingPayload = null;
+    let pendingAuthMethod = null;
+
     document.addEventListener('DOMContentLoaded', function() {
         const profileFields = document.querySelectorAll('.profile-field');
         const passwordAuthSection = document.getElementById('password-auth-section');
@@ -414,12 +457,13 @@
         const passwordSection = document.getElementById('password-section');
         const sendVerificationBtn = document.getElementById('send-verification-btn');
         const verificationCodeRow = document.getElementById('verification-code-row');
+        const verificationErrorDiv = document.getElementById('verification-error');
         
         // Detection values
         const originalName = document.getElementById('original_name').value;
         const originalUsername = document.getElementById('original_username').value;
 
-        // 1. Handle Server Flash Messages via Modal (For redirect-based events)
+        // 1. Handle Server Flash Messages
         const serverMessages = document.querySelectorAll('#server-messages div');
         if (serverMessages.length > 0) {
             const msg = serverMessages[0]; 
@@ -437,7 +481,7 @@
             field.addEventListener('input', checkForChanges);
         });
 
-        // 3. Toggle Password Change Visibility (Manual Only)
+        // 3. Toggle Password Change Visibility
         if (changePasswordCheckbox) {
             changePasswordCheckbox.addEventListener('change', function() {
                 if(this.checked) {
@@ -459,7 +503,6 @@
             
             const hasChanges = nameChanged || usernameChanged || passwordChangeRequested;
 
-            // Reset both sections first
             if (passwordAuthSection) passwordAuthSection.style.display = 'none';
             if (emailVerificationSection) emailVerificationSection.style.display = 'none';
 
@@ -479,7 +522,12 @@
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Sending...';
                 
-                fetch('/send-verification-code', {
+                if(verificationErrorDiv) {
+                    verificationErrorDiv.style.display = 'none';
+                    verificationErrorDiv.textContent = '';
+                }
+                
+                fetch('/send-profile-verification', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: document.getElementById('email').value })
@@ -506,12 +554,14 @@
             });
         }
 
-        // 6. Form Submission (Updated to AJAX to prevent page reload on error)
+        // 6. Form Submission - NOW TRIGGERS CONFIRMATION
         document.getElementById('profileForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Stop default form submit
+            event.preventDefault(); 
 
-            const nameChanged = document.getElementById('name').value !== originalName;
-            const usernameChanged = document.getElementById('username').value !== originalUsername;
+            const name = document.getElementById('name').value;
+            const username = document.getElementById('username').value;
+            const nameChanged = name !== originalName;
+            const usernameChanged = username !== originalUsername;
             const passwordChangeRequested = changePasswordCheckbox && changePasswordCheckbox.checked;
 
             if (!nameChanged && !usernameChanged && !passwordChangeRequested) {
@@ -519,93 +569,126 @@
                 return;
             }
 
-            // Client-Side Auth Check
+            // Construct Payload
+            let payload = {
+                name: name,
+                username: username
+            };
+
+            // Client-Side Validation
             if (authMethod === 'manual') {
                 const pass = document.getElementById('current_password').value;
                 if (!pass) {
                     showStatusModal('error', 'Authentication Required', 'Please enter your current password to save changes.');
                     return;
                 }
+                payload.current_password = pass;
+                
+                if (passwordChangeRequested) {
+                    const newP = document.getElementById('new_password').value;
+                    const confP = document.getElementById('confirm_password').value;
+                    
+                    if (newP.length < 6) {
+                        showStatusModal('error', 'Weak Password', 'New password must be at least 6 characters long.');
+                        return;
+                    }
+                    if (newP !== confP) {
+                        showStatusModal('error', 'Mismatch', 'New passwords do not match. Please try again.');
+                        return;
+                    }
+                    payload.change_password = true;
+                    payload.new_password = newP;
+                }
             } else if (authMethod === 'google') {
                 const code = document.getElementById('verification_code').value;
                 if (!code) {
-                    showStatusModal('error', 'Verification Required', 'Please enter the 6-digit code sent to your email.');
-                    return;
-                }
-            }
-
-            // New Password Validation
-            if (passwordChangeRequested && authMethod === 'manual') {
-                const newP = document.getElementById('new_password').value;
-                const confP = document.getElementById('confirm_password').value;
-                
-                if (newP.length < 6) {
-                    showStatusModal('error', 'Weak Password', 'New password must be at least 6 characters long.');
-                    return;
-                }
-                if (newP !== confP) {
-                    showStatusModal('error', 'Mismatch', 'New passwords do not match. Please try again.');
-                    return;
-                }
-            }
-
-            // Perform AJAX Request
-            const formData = new FormData(this);
-            const submitBtn = document.querySelector('.btn-update');
-            const originalBtnText = submitBtn.innerHTML;
-            
-            // UI Loading State
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            submitBtn.disabled = true;
-
-            fetch(window.location.href, { 
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest' // Helper for backend to detect AJAX
-                }
-            })
-            .then(response => {
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    return response.json();
-                } else {
-                    // Fallback in case backend returns HTML
-                    throw new Error("Server response was not JSON.");
-                }
-            })
-            .then(data => {
-                if (data.success) {
-                    showStatusModal('success', 'Profile Updated', 'Your changes have been saved successfully.');
-                    // Only reload on success to update values
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
-                } else {
-                    // Check if error is related to verification code
-                    if (authMethod === 'google') {
-                        // We set a flag to clear the code when modal closes
-                        shouldClearCode = true;
+                    if (verificationErrorDiv) {
+                        verificationErrorDiv.textContent = 'Please enter verification code';
+                        verificationErrorDiv.style.display = 'block';
+                    } else {
+                        showStatusModal('error', 'Verification Required', 'Please enter the 6-digit code sent to your email.');
                     }
-                    showStatusModal('error', 'Update Failed', data.message);
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showStatusModal('error', 'System Error', 'An unexpected error occurred. Please try again or check console.');
-            })
-            .finally(() => {
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
-            });
+                payload.verification_code = code;
+            }
+
+            // Store data globally for the confirmation button to use
+            pendingPayload = payload;
+            pendingAuthMethod = authMethod;
+
+            // SHOW CONFIRMATION MODAL INSTEAD OF FETCHING DIRECTLY
+            document.getElementById('confirmation-modal').classList.add('show');
+        });
+
+        // 7. Handle "Yes, Update" Click
+        document.getElementById('confirm-update-btn').addEventListener('click', function() {
+            closeConfirmationModal(); // Close confirm modal
+            executeProfileUpdate(); // Run the actual update
         });
     });
 
-    // --- Modal Helper Functions ---
-    
-    // Flag to control input clearing
-    let shouldClearCode = false; 
+    // --- Execute Update Function ---
+    function executeProfileUpdate() {
+        if (!pendingPayload) return;
 
+        const submitBtn = document.querySelector('.btn-update');
+        const originalBtnText = submitBtn.innerHTML;
+        const verificationErrorDiv = document.getElementById('verification-error');
+        
+        // UI Loading State
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
+        
+        // Clear inline errors
+        if(verificationErrorDiv) {
+            verificationErrorDiv.style.display = 'none';
+            verificationErrorDiv.textContent = '';
+        }
+
+        fetch('/update-profile', { 
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(pendingPayload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showStatusModal('success', 'Profile Updated', data.message || 'Your changes have been saved successfully.');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                if (pendingAuthMethod === 'google' && data.field === 'code') {
+                     const codeInput = document.getElementById('verification_code');
+                     if(codeInput) codeInput.value = '';
+                     
+                     if(verificationErrorDiv) {
+                         verificationErrorDiv.textContent = data.message;
+                         verificationErrorDiv.style.display = 'block';
+                     } else {
+                         showStatusModal('error', 'Verification Failed', data.message);
+                     }
+                } else {
+                    showStatusModal('error', 'Update Failed', data.message);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showStatusModal('error', 'System Error', 'An unexpected error occurred.');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalBtnText;
+            submitBtn.disabled = false;
+            pendingPayload = null; // Clear payload
+        });
+    }
+
+    // --- Modal Helper Functions ---
     function showStatusModal(type, title, message) {
         const modal = document.getElementById('status-modal');
         const iconDiv = document.getElementById('modal-icon');
@@ -615,7 +698,6 @@
         titleEl.textContent = title;
         msgEl.textContent = message;
 
-        // Set Icon
         if (type === 'success') {
             iconDiv.innerHTML = '<i class="fas fa-check-circle"></i>';
             iconDiv.className = 'modal-icon success';
@@ -626,27 +708,21 @@
             iconDiv.innerHTML = '<i class="fas fa-info-circle"></i>';
             iconDiv.className = 'modal-icon info';
         }
-
         modal.classList.add('show');
     }
-
+    
     function closeStatusModal() {
-        const modal = document.getElementById('status-modal');
-        modal.classList.remove('show');
-        
-        // This is the key fix: Clear code input only if flag is set
-        if (shouldClearCode) {
-            const codeInput = document.getElementById('verification_code');
-            if (codeInput) {
-                codeInput.value = ''; 
-                codeInput.focus();
-            }
-            shouldClearCode = false; // Reset flag
-        }
+        document.getElementById('status-modal').classList.remove('show');
     }
     
-    document.getElementById('status-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeStatusModal();
+    function closeConfirmationModal() {
+        document.getElementById('confirmation-modal').classList.remove('show');
+    }
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target.id === 'status-modal') closeStatusModal();
+        if (e.target.id === 'confirmation-modal') closeConfirmationModal();
     });
 </script>
 

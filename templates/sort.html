@@ -564,11 +564,12 @@
                 <h4 class="section-title">Live Camera Feed</h4>
                 <div class="camera-feed-container">
                     <div class="camera-placeholder">
-                        <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
-                        <p class="text-gray-500 font-medium">Waiting for camera connection...</p>
-                        <div class="mt-4 flex items-center justify-center">
-                            <span class="status-indicator offline"></span>
-                            <span class="text-sm text-gray-500 status-text">Camera offline</span>
+                        <img id="raspi-stream" src="{{ url_for('raspi_stream') }}" alt="Camera stream" style="display:none;" />
+                        
+                        <div id="stream-offline-ui">
+                            <p>Camera offline. Click Connect to try.</p>
+                            <button id="btn-connect" class="control-btn btn-start">Connect Camera</button>
+                            <button id="btn-stop" class="control-btn btn-stop" disabled>Stop</button>
                         </div>
                     </div>
                 </div>
@@ -631,209 +632,133 @@
     </div>
 </div>
 
+<div style="display:none;">
+  <canvas id="capture-canvas" width="224" height="224"></canvas>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- Initialization ---
-        const startBtn = document.getElementById('start-btn');
-        const stopBtn = document.getElementById('stop-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        
-        // **Device Connection State**
-        let sortingActive = false;
-        let deviceConnected = false; // <<< DEVICE IS NOT CONNECTED BY DEFAULT
-        
-        let connectionAttemptTimeout = null; // New variable to hold the timeout ID
-        let sortingInterval = null;
-        
-        // Get Modal elements
-        const errorModal = document.getElementById('error-modal');
-
-        // Initialize Charts (Initializes with 0s)
-        const pieCtx = document.getElementById('sorting-pie-chart').getContext('2d');
-        const pieChart = new Chart(pieCtx, {
-            type: 'doughnut', 
-            data: { labels: ['GOOD', 'REJECTED'], datasets: [{ data: [0, 0], backgroundColor: ['#28a745', '#dc3545'], borderWidth: 0, hoverOffset: 4 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } } }
-        });
-
-        const performanceCtx = document.getElementById('performance-chart').getContext('2d');
-        const gradient = performanceCtx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(40, 167, 69, 0.2)');
-        gradient.addColorStop(1, 'rgba(40, 167, 69, 0.0)');
-        const performanceChart = new Chart(performanceCtx, {
-            type: 'line',
-            data: { 
-                labels: Array.from({length: 10}, (_, i) => i + 1).map(String), 
-                datasets: [{ 
-                    label: 'Good Fruits Processed', data: Array(10).fill(0), borderColor: '#28a745', backgroundColor: gradient, fill: true, tension: 0.4, 
-                    pointRadius: 4, pointBackgroundColor: '#ffffff', pointBorderColor: '#28a745', pointBorderWidth: 2 
-                }] 
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { borderDash: [5, 5] }, suggestedMax: 10 }, x: { grid: { display: false } } } }
-        });
-
-        // --- Modal Functions ---
-        
-        function showErrorModal(message) {
-            document.getElementById('error-modal-message').textContent = message;
-            errorModal.classList.add('show');
+    document.addEventListener('DOMContentLoaded', function () {
+      // Elements
+      const startBtn = document.getElementById('start-btn');
+      const stopBtn = document.getElementById('stop-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const raspiImg = document.getElementById('raspi-stream');
+      const captureCanvas = document.getElementById('capture-canvas');
+      const ctx = captureCanvas.getContext('2d');
+    
+      // Endpoints
+      const realtimeScanUrl = '{{ url_for("realtime_scan") }}';
+      const saveDetectionUrl = '{{ url_for("save_detection") }}';
+    
+      // State
+      let detectInterval = null;
+      let goodCount = 0;
+      let rejectedCount = 0;
+      const accepted_keywords = ['half', 'healthy', 'ripe', 'over']; 
+    
+      function updateUI() {
+        document.getElementById('good-count').textContent = String(goodCount);
+        document.getElementById('rejected-count').textContent = String(rejectedCount);
+        const total = goodCount + rejectedCount;
+        const pct = total === 0 ? 0 : Math.round((goodCount / total) * 100);
+        document.getElementById('progress-bar').style.width = pct + '%';
+        document.getElementById('progress-text').textContent = pct + '%';
+      }
+    
+      // --- CORE LOGIC: Analyze Frame & Move Servo ---
+      async function analyzeOnceAndAct() {
+        if (!raspiImg || raspiImg.style.display === 'none') return;
+        try {
+          // 1. Capture image from video stream
+          ctx.clearRect(0,0,224,224);
+          ctx.drawImage(raspiImg, 0, 0, 224, 224);
+          const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
+    
+          // 2. Send to AI
+          const fd = new FormData();
+          fd.append('image_data', dataUrl);
+          const res = await fetch(realtimeScanUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+          if (!res.ok) return;
+          const payload = await res.json();
+          if (!payload || !payload.success) return;
+    
+          // 3. Determine if Good or Bad
+          const cls = String(payload.predicted_class || '').toLowerCase();
+          const accepted = accepted_keywords.some(k => cls.includes(k));
+    
+          // 4. Move Servo & Update Counters
+          if (accepted) {
+            goodCount += 1;
+            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'right'}) , credentials: 'same-origin' });
+            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 800);
+          } else {
+            rejectedCount += 1;
+            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'left'}), credentials: 'same-origin' });
+            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 900);
+          }
+    
+          // 5. Save Data
+          const detection_info = { predicted_class: payload.predicted_class, confidence: payload.confidence };
+          const saveFd = new FormData();
+          saveFd.append('image_data', dataUrl);
+          saveFd.append('detection_data', JSON.stringify(detection_info));
+          fetch(saveDetectionUrl, { method: 'POST', body: saveFd, credentials: 'same-origin' }).catch(()=>{});
+    
+          updateUI();
+        } catch (e) {
+          console.warn('Realtime analyze error', e);
         }
-
-        window.closeErrorModal = function() {
-            errorModal.classList.remove('show');
+      }
+    
+      function startDetectionLoop() {
+        if (detectInterval) return;
+        analyzeOnceAndAct();
+        detectInterval = setInterval(analyzeOnceAndAct, 1200); // Loop every 1.2 seconds
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        resetBtn.disabled = true;
+      }
+    
+      function stopDetectionLoop() {
+        if (detectInterval) {
+          clearInterval(detectInterval);
+          detectInterval = null;
         }
-
-        errorModal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeErrorModal();
-            }
-        });
-
-        // --- Button Handlers ---
-        
-        // Start Handler
-        startBtn.addEventListener('click', function() {
-            if (sortingActive) return;
-
-            // 1. Set UI to "Attempting Connection" State
-            startBtn.disabled = true;
-            stopBtn.disabled = false; // Allows user to cancel attempt
-            resetBtn.disabled = true;
-            
-            const statusIndicator = document.querySelector('.status-indicator');
-            const statusText = document.querySelector('.status-text');
-            const cameraPlaceholder = document.querySelector('.camera-placeholder');
-            
-            // Temporary connection status UI
-            statusIndicator.className = 'status-indicator online';
-            statusText.textContent = 'Attempting connection...';
-            cameraPlaceholder.innerHTML = `
-                <div class="camera-active">
-                    <i class="fas fa-spinner fa-spin text-warning fa-3x mb-3"></i>
-                    <p class="text-warning font-bold">Connecting</p>
-                    <p class="text-gray-500 text-sm">Waiting 3 seconds for response...</p>
-                </div>
-            `;
-            
-            // 2. Set the 3-second delay
-            connectionAttemptTimeout = setTimeout(() => {
-                
-                // 3. After 3 seconds, check the status
-                if (!deviceConnected) {
-                    
-                    // A. Connection Failed: Show Modal and Revert UI state
-                    showErrorModal("The MangosQueen Sorting Machine is not Turned On and Connected.");
-                    
-                    // Revert controls to pre-start state
-                    startBtn.disabled = false;
-                    stopBtn.disabled = true;
-                    resetBtn.disabled = true;
-
-                    // Revert camera placeholder to offline state
-                    statusIndicator.className = 'status-indicator offline';
-                    statusText.textContent = 'Camera offline';
-                    cameraPlaceholder.innerHTML = `
-                        <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
-                        <p class="text-gray-500 font-medium">Waiting for camera connection...</p>
-                        <div class="mt-4 flex items-center justify-center">
-                            <span class="status-indicator offline"></span>
-                            <span class="text-sm text-gray-500 status-text">Camera offline</span>
-                        </div>
-                    `;
-
-                } else {
-                    // B. Connection Success: (For future implementation)
-                    sortingActive = true;
-                }
-            }, 3000); // 3 seconds delay
-        });
-        
-        // Stop Handler
-        stopBtn.addEventListener('click', function() {
-            // Clear any pending connection attempt timeout
-            if (connectionAttemptTimeout) {
-                clearTimeout(connectionAttemptTimeout);
-                connectionAttemptTimeout = null;
-            }
-
-            // Resetting controls and status
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        resetBtn.disabled = false;
+      }
+    
+      startBtn.addEventListener('click', startDetectionLoop);
+      stopBtn.addEventListener('click', stopDetectionLoop);
+      
+      // --- CONNECTION LOGIC ---
+      const btnConnect = document.getElementById('btn-connect');
+      const offlineUI = document.getElementById('stream-offline-ui');
+    
+      async function tryConnectFlow() {
+        if (!btnConnect) return;
+        btnConnect.disabled = true;
+        offlineUI.innerHTML = '<p class="text-warning">Connecting to machine...</p>';
+    
+        // Try to load the proxy stream
+        raspiImg.src = '{{ url_for("raspi_stream") }}' + '?_t=' + Date.now();
+        raspiImg.onload = () => {
+            raspiImg.style.display = 'block';
+            offlineUI.style.display = 'none';
             startBtn.disabled = false;
-            stopBtn.disabled = true;
-            resetBtn.disabled = false;
-            sortingActive = false;
-            
-            // UI Updates for Stopped State
-            const statusIndicator = document.querySelector('.status-indicator');
-            const statusText = document.querySelector('.status-text');
-            const cameraPlaceholder = document.querySelector('.camera-placeholder');
-
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'Camera offline';
-            cameraPlaceholder.innerHTML = `
-                <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
-                <p class="text-gray-500 font-medium">Machine Stopped</p>
-                <div class="mt-4 flex items-center justify-center">
-                    <span class="status-indicator offline"></span>
-                    <span class="text-sm text-gray-500 status-text">Camera offline</span>
-                </div>
-            `;
-            
-            // Disconnection logic (clears any simulation or connection interval)
-            if (sortingInterval) {
-                clearInterval(sortingInterval);
-                sortingInterval = null;
-            }
-        });
-        
-        // Reset Handler
-        resetBtn.addEventListener('click', function() {
-            // 1. Reset Counter Displays
-            document.getElementById('good-count').textContent = '0';
-            document.getElementById('rejected-count').textContent = '0';
-            document.getElementById('progress-bar').style.width = '0%';
-            document.getElementById('progress-text').textContent = '0%';
-            
-            // 2. Reset Charts 
-            pieChart.data.datasets[0].data = [0, 0];
-            pieChart.update();
-            
-            performanceChart.data.datasets[0].data = Array(10).fill(0); 
-            performanceChart.update();
-            
-            // 3. Reset UI/Status to Initial State
-            const statusIndicator = document.querySelector('.status-indicator');
-            const statusText = document.querySelector('.status-text');
-            const cameraPlaceholder = document.querySelector('.camera-placeholder');
-            
-            statusIndicator.className = 'status-indicator offline';
-            statusText.textContent = 'Camera offline';
-            cameraPlaceholder.innerHTML = `
-                <i class="fas fa-camera fa-4x text-gray-400 mb-3"></i>
-                <p class="text-gray-500 font-medium">Waiting for camera connection...</p>
-                <div class="mt-4 flex items-center justify-center">
-                    <span class="status-indicator offline"></span>
-                    <span class="text-sm text-gray-500 status-text">Camera offline</span>
-                </div>
-            `;
-            
-            // 4. Reset Button States and Status
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            resetBtn.disabled = true;
-            sortingActive = false;
-            
-            // Stop any pending timeouts or intervals
-            if (connectionAttemptTimeout) {
-                clearTimeout(connectionAttemptTimeout);
-                connectionAttemptTimeout = null;
-            }
-            if (sortingInterval) {
-                clearInterval(sortingInterval);
-                sortingInterval = null;
-            }
-        });
+        };
+        raspiImg.onerror = () => {
+            btnConnect.disabled = false;
+            offlineUI.innerHTML = '<p>Connection failed. Is the machine on?</p><button id="btn-connect" class="control-btn btn-start">Retry</button>';
+            // Re-attach listener to new button
+            document.getElementById('btn-connect').addEventListener('click', tryConnectFlow);
+        };
+      }
+    
+      if (btnConnect) btnConnect.addEventListener('click', tryConnectFlow);
     });
-</script>
+    </script>
 {% endblock %}
