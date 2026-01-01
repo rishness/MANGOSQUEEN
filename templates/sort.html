@@ -8,7 +8,7 @@
 
 <style>
     /* ------------------------------------------------------------------ */
-    /* --- I. UNIVERSAL & BASE STYLES (Matched to scan.html) ------------ */
+    /* --- I. UNIVERSAL & BASE STYLES ----------------------------------- */
     /* ------------------------------------------------------------------ */
     
     /* Page load transition */
@@ -168,27 +168,40 @@
         overflow: hidden;
         position: relative;
         border: 2px dashed #cbd5e0;
+        padding: 2rem;               /* ADD: inner spacing so image sits away from dashed border */
+        box-sizing: border-box;      /* ensure padding included in size */
     }
     
-    .camera-placeholder i {
-        font-size: clamp(2rem, 8vw, 4rem); 
-    }
-
-    .camera-active {
-        background: white;
+    /* make placeholder take full area inside the dashed card */
+    .camera-placeholder {
         width: 100%;
         height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.5s;
+        display: block;
+        position: relative;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    /* make the stream image fill the entire placeholder */
+    .camera-placeholder img#raspi-stream {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;           /* crop / cover to fill the area */
+        border-radius: 12px;         /* match card visuals */
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     }
+
+    /* hide the offline UI when stream visible */
+    #stream-offline-ui { 
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .75rem;
+        z-index: 2;
+    }
+    /* keep offline UI hidden when stream active via JS toggle */
+    #stream-offline-ui.hidden { display: none; }
 
     /* --- Status Cards --- */
     .status-grid {
@@ -563,15 +576,14 @@
             <div class="content-section section-camera">
                 <h4 class="section-title">Live Camera Feed</h4>
                 <div class="camera-feed-container">
-                    <div class="camera-placeholder">
-                        <img id="raspi-stream" src="{{ url_for('raspi_stream') }}" alt="Camera stream" style="display:none;" />
-                        
-                        <div id="stream-offline-ui">
-                            <p>Camera offline. Click Connect to try.</p>
-                            <button id="btn-connect" class="control-btn btn-start">Connect Camera</button>
-                            <button id="btn-stop" class="control-btn btn-stop" disabled>Stop</button>
-                        </div>
+                  <div class="camera-placeholder">
+                    <img id="raspi-stream" src="{{ url_for('raspi_stream') }}" alt="Camera stream" style="display:none;" />
+                    <div id="stream-offline-ui">
+                      <p>Camera offline. Click Connect to try.</p>
+                      <button id="btn-connect" class="control-btn btn-start">Connect Camera</button>
+                      <button id="btn-stop" class="control-btn btn-stop" disabled>Stop</button>
                     </div>
+                  </div>
                 </div>
             </div>
 
@@ -606,8 +618,18 @@
 
             <div class="content-section section-analytics">
                 <h4 class="section-title">Performance Analytics</h4>
-                <div class="chart-wrapper">
-                    <canvas id="performance-chart"></canvas>
+                <div class="analytics-controls" style="display:flex;align-items:center;gap:12px;margin:12px 0;">
+                  <label for="analytics-period" style="font-weight:600;color:#4a5568;">Range:</label>
+                  <select id="analytics-period" class="control-btn" style="padding:.5rem .75rem;border-radius:8px;">
+                    <option value="day" selected>Last 30 days</option>
+                    <option value="week">Last 12 weeks</option>
+                    <option value="month">Last 12 months</option>
+                  </select>
+                  <button id="analytics-refresh" class="control-btn" style="margin-left:8px;">Refresh</button>
+                </div>
+
+                <div style="padding:1rem;background:#fff;border-radius:8px;">
+                  <canvas id="analyticsChart" width="800" height="360"></canvas>
                 </div>
             </div>
 
@@ -636,129 +658,418 @@
   <canvas id="capture-canvas" width="224" height="224"></canvas>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// --- CRITICAL FIX: Defined the function globally so the button can find it ---
+function closeErrorModal() {
+    const modal = document.getElementById('error-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Elements (IDs unchanged)
+  const startBtn = document.getElementById('start-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const raspiImg = document.getElementById('raspi-stream');
+  const captureCanvas = document.getElementById('capture-canvas');
+  const ctx = captureCanvas.getContext('2d');
+
+  // endpoints
+  const realtimeScanUrl = '{{ url_for("realtime_scan") }}';
+  const saveDetectionUrl = '{{ url_for("save_detection") }}';
+
+  // State
+  let detectInterval = null;
+  let goodCount = 0;
+  let rejectedCount = 0;
+  const accepted_keywords = ['half', 'healthy', 'ripe', 'over']; // mapping: accepted only when these appear
+
+  function updateUI() {
+    document.getElementById('good-count').textContent = String(goodCount);
+    document.getElementById('rejected-count').textContent = String(rejectedCount);
+    const total = goodCount + rejectedCount;
+    const pct = total === 0 ? 0 : Math.round((goodCount / total) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = pct + '%';
+  }
+
+  async function saveDetectionToServer(imageData, detection) {
+    try {
+      const fd = new FormData();
+      fd.append('image_data', imageData);
+      fd.append('detection_data', JSON.stringify(detection));
+      const res = await fetch(saveDetectionUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+      return res.ok ? await res.json() : null;
+    } catch (e) {
+      console.warn('Save detection error', e);
+      return null;
+    }
+  }
+
+  async function analyzeOnceAndAct() {
+    if (!raspiImg || raspiImg.style.display === 'none') return;
+    try {
+      ctx.clearRect(0,0,224,224);
+      ctx.drawImage(raspiImg, 0, 0, 224, 224);
+      const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
+
+      const fd = new FormData();
+      fd.append('image_data', dataUrl);
+      const res = await fetch(realtimeScanUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+      if (!res.ok) return;
+      const payload = await res.json();
+      if (!payload || !payload.success) return;
+
+      const cls = String(payload.predicted_class || '').toLowerCase();
+
+      // decide acceptance precisely by keywords
+      const accepted = accepted_keywords.some(k => cls.includes(k));
+
+      if (accepted) {
+        goodCount += 1;
+        // servo actions (via your existing api_servo proxy)
+        await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'right'}) , credentials: 'same-origin' });
+        setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 800);
+      } else {
+        rejectedCount += 1;
+        await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'left'}), credentials: 'same-origin' });
+        setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 900);
+      }
+
+      // Save every detection to server (saved under sorts/{YYYY-MM-DD}/records)
+      const detection_info = {
+        predicted_class: payload.predicted_class,
+        confidence: payload.confidence
+      };
+      saveDetectionToServer(dataUrl, detection_info).catch(()=>{});
+
+      updateUI();
+    } catch (e) {
+      console.warn('Realtime analyze error', e);
+    }
+  }
+
+  function startDetectionLoop() {
+    if (detectInterval) return;
+    analyzeOnceAndAct();
+    detectInterval = setInterval(analyzeOnceAndAct, 1200);
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    resetBtn.disabled = true;
+  }
+
+  function stopDetectionLoop() {
+    if (detectInterval) {
+      clearInterval(detectInterval);
+      detectInterval = null;
+    }
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    resetBtn.disabled = false;
+    // release camera by clearing src if you used proxy fallback
+    try { raspiImg.src = ''; } catch(e){}
+    raspiImg.style.display = 'none';
+  }
+
+  function resetData() {
+    stopDetectionLoop();
+    goodCount = 0;
+    rejectedCount = 0;
+    updateUI();
+  }
+
+  startBtn.addEventListener('click', async () => {
+    // ensure camera connected (reuse existing connect logic or click Connect Camera first)
+    // If your UI has a Connect Camera button, ensure it's used before starting.
+    startDetectionLoop();
+  });
+
+  stopBtn.addEventListener('click', stopDetectionLoop);
+  resetBtn.addEventListener('click', resetData);
+
+  // initial state
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  resetBtn.disabled = true;
+  updateUI();
+});
+
+// improved connect logic with diagnostics
+const btnConnect = document.getElementById('btn-connect');
+const raspiImg = document.getElementById('raspi-stream');
+const offlineUI = document.getElementById('stream-offline-ui');
+const btnStopCamera = document.getElementById('btn-stop'); // camera card Stop button
+const errorModal = document.getElementById('error-modal');
+
+async function diagnosticPing() {
+  try {
+    const res = await fetch('{{ url_for("raspi_ping") }}', { credentials: 'same-origin' });
+    if (!res.ok) return { ok: false, status: res.status, body: await res.text() };
+    const j = await res.json();
+    return { ok: !!j.ok, status: j.status || res.status, content_type: j.content_type, raw: j };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+async function tryConnectFlow() {
+  if (!btnConnect) return;
+  btnConnect.disabled = true;
+
+  // show minimal connecting UI
+  offlineUI?.classList.remove('hidden');
+  offlineUI && (offlineUI.innerHTML = '<p class="text-warning">Connecting…</p>');
+
+  const ping = await diagnosticPing();
+  console.log('raspi_ping:', ping);
+
+  // If ping says OK, prefer proxy
+  const proxyUrl = '{{ url_for("raspi_stream") }}' + '?_t=' + Date.now();
+  const directUrl = 'http://10.183.102.246:5000/video_feed' + '?_t=' + Date.now();
+
+  // helper to attach load/error handlers
+  function attachHandlers(url, onSuccess, onFail) {
+    raspiImg.onload = () => { raspiImg.onload = raspiImg.onerror = null; onSuccess(); };
+    raspiImg.onerror = (ev) => { raspiImg.onload = raspiImg.onerror = null; onFail(ev); };
+    raspiImg.src = url;
+  }
+
+  // success UI
+  const onSuccess = () => {
+    raspiImg.style.display = 'block';
+    offlineUI.classList.add('hidden');
+    btnStopCamera && (btnStopCamera.disabled = false);
+    // enable Start Scanning etc if present
+    document.getElementById('start-btn')?.removeAttribute('disabled');
+  };
+
+  // fail UI
+  const onFail = async (ev) => {
+    console.warn('stream load failed', ev);
+    // if ping returned non-ok and page is HTTP, try direct fallback
+    const pageIsHTTPS = window.location.protocol === 'https:';
+    if (!pageIsHTTPS) {
+      console.log('Attempting direct Pi fallback (not blocked by mixed content)...');
+      attachHandlers(directUrl, onSuccess, () => {
+        console.error('Both proxy and direct Pi stream failed');
+        btnConnect.disabled = false;
+        offlineUI.classList.remove('hidden');
+        offlineUI.innerHTML = '<p>Camera offline. Click Connect to try.</p><button id="btn-connect" class="control-btn btn-start">Connect Camera</button>';
+        document.getElementById('error-modal-message').textContent = 'Could not connect to camera (proxy & direct). See console/Network for details.';
+        errorModal?.classList.add('show');
+      });
+    } else {
+      // HTTPS page prevents direct HTTP fallback; show diagnostic message
+      btnConnect.disabled = false;
+      offlineUI.classList.remove('hidden');
+      offlineUI.innerHTML = '<p>Camera offline. Click Connect to try.</p><button id="btn-connect" class="control-btn btn-start">Connect Camera</button>';
+      let msg = 'Proxy failed';
+      if (ping && ping.error) msg += `: ${ping.error}`;
+      else if (ping && ping.content_type) msg += ` (content_type=${ping.content_type})`;
+      document.getElementById('error-modal-message').textContent = msg + '. If your site uses HTTPS you must use the proxy (/raspi_stream) or serve the site over HTTP for testing.';
+      errorModal?.classList.add('show');
+    }
+  };
+
+  // First attempt: proxy (same-origin)
+  attachHandlers(proxyUrl, onSuccess, onFail);
+
+  // safety timeout: if nothing loads within 8s, treat as failure (triggers onFail)
+  setTimeout(() => {
+    if (!raspiImg.complete || raspiImg.naturalWidth === 0) {
+      // force error path
+      onFail(new Error('connect timeout'));
+    }
+  }, 8000);
+}
+
+if (btnConnect) {
+  btnConnect.addEventListener('click', tryConnectFlow);
+  // re-bind connect button inserted back into offlineUI by handlers
+  offlineUI?.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btn-connect') tryConnectFlow();
+  });
+}
+
+// optional camera card Stop button: stop showing stream
+if (btnStopCamera) {
+  btnStopCamera.addEventListener('click', () => {
+    try { raspiImg.src = ''; } catch(e){}
+    raspiImg.style.display = 'none';
+    offlineUI.classList.remove('hidden');
+    btnStopCamera.disabled = true;
+    btnConnect && (btnConnect.disabled = false);
+  });
+}
+</script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Elements
-      const startBtn = document.getElementById('start-btn');
-      const stopBtn = document.getElementById('stop-btn');
-      const resetBtn = document.getElementById('reset-btn');
-      const raspiImg = document.getElementById('raspi-stream');
-      const captureCanvas = document.getElementById('capture-canvas');
-      const ctx = captureCanvas.getContext('2d');
-    
-      // Endpoints
-      const realtimeScanUrl = '{{ url_for("realtime_scan") }}';
-      const saveDetectionUrl = '{{ url_for("save_detection") }}';
-    
-      // State
-      let detectInterval = null;
-      let goodCount = 0;
-      let rejectedCount = 0;
-      const accepted_keywords = ['half', 'healthy', 'ripe', 'over']; 
-    
-      function updateUI() {
-        document.getElementById('good-count').textContent = String(goodCount);
-        document.getElementById('rejected-count').textContent = String(rejectedCount);
-        const total = goodCount + rejectedCount;
-        const pct = total === 0 ? 0 : Math.round((goodCount / total) * 100);
-        document.getElementById('progress-bar').style.width = pct + '%';
-        document.getElementById('progress-text').textContent = pct + '%';
-      }
-    
-      // --- CORE LOGIC: Analyze Frame & Move Servo ---
-      async function analyzeOnceAndAct() {
-        if (!raspiImg || raspiImg.style.display === 'none') return;
-        try {
-          // 1. Capture image from video stream
-          ctx.clearRect(0,0,224,224);
-          ctx.drawImage(raspiImg, 0, 0, 224, 224);
-          const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
-    
-          // 2. Send to AI
-          const fd = new FormData();
-          fd.append('image_data', dataUrl);
-          const res = await fetch(realtimeScanUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
-          if (!res.ok) return;
-          const payload = await res.json();
-          if (!payload || !payload.success) return;
-    
-          // 3. Determine if Good or Bad
-          const cls = String(payload.predicted_class || '').toLowerCase();
-          const accepted = accepted_keywords.some(k => cls.includes(k));
-    
-          // 4. Move Servo & Update Counters
-          if (accepted) {
-            goodCount += 1;
-            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'right'}) , credentials: 'same-origin' });
-            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 800);
-          } else {
-            rejectedCount += 1;
-            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'left'}), credentials: 'same-origin' });
-            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 900);
-          }
-    
-          // 5. Save Data
-          const detection_info = { predicted_class: payload.predicted_class, confidence: payload.confidence };
-          const saveFd = new FormData();
-          saveFd.append('image_data', dataUrl);
-          saveFd.append('detection_data', JSON.stringify(detection_info));
-          fetch(saveDetectionUrl, { method: 'POST', body: saveFd, credentials: 'same-origin' }).catch(()=>{});
-    
-          updateUI();
-        } catch (e) {
-          console.warn('Realtime analyze error', e);
-        }
-      }
-    
-      function startDetectionLoop() {
-        if (detectInterval) return;
-        analyzeOnceAndAct();
-        detectInterval = setInterval(analyzeOnceAndAct, 1200); // Loop every 1.2 seconds
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        resetBtn.disabled = true;
-      }
-    
-      function stopDetectionLoop() {
-        if (detectInterval) {
-          clearInterval(detectInterval);
-          detectInterval = null;
-        }
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        resetBtn.disabled = false;
-      }
-    
-      startBtn.addEventListener('click', startDetectionLoop);
-      stopBtn.addEventListener('click', stopDetectionLoop);
-      
-      // --- CONNECTION LOGIC ---
-      const btnConnect = document.getElementById('btn-connect');
-      const offlineUI = document.getElementById('stream-offline-ui');
-    
-      async function tryConnectFlow() {
-        if (!btnConnect) return;
-        btnConnect.disabled = true;
-        offlineUI.innerHTML = '<p class="text-warning">Connecting to machine...</p>';
-    
-        // Try to load the proxy stream
-        raspiImg.src = '{{ url_for("raspi_stream") }}' + '?_t=' + Date.now();
-        raspiImg.onload = () => {
-            raspiImg.style.display = 'block';
-            offlineUI.style.display = 'none';
-            startBtn.disabled = false;
-        };
-        raspiImg.onerror = () => {
-            btnConnect.disabled = false;
-            offlineUI.innerHTML = '<p>Connection failed. Is the machine on?</p><button id="btn-connect" class="control-btn btn-start">Retry</button>';
-            // Re-attach listener to new button
-            document.getElementById('btn-connect').addEventListener('click', tryConnectFlow);
-        };
-      }
-    
-      if (btnConnect) btnConnect.addEventListener('click', tryConnectFlow);
+/**
+ * Analytics loader: dynamically load Chart.js if it's not present,
+ * then fetch /api/sort-analytics and render a stacked bar chart.
+ * Shows friendly messages when data is empty or when errors occur.
+ */
+document.addEventListener('DOMContentLoaded', function() {
+  const periodSelect = document.getElementById('analytics-period');
+  const refreshBtn = document.getElementById('analytics-refresh');
+  const canvas = document.getElementById('analyticsChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let analyticsChart = null;
+
+  // Dynamically load Chart.js from CDN if not present
+  function loadChartJs() {
+    return new Promise((resolve, reject) => {
+      if (window.Chart) return resolve(window.Chart);
+      const url = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+      const s = document.createElement('script');
+      s.src = url;
+      s.async = true;
+      s.onload = () => {
+        if (window.Chart) resolve(window.Chart);
+        else reject(new Error('Chart failed to initialize'));
+      };
+      s.onerror = (e) => reject(new Error('Failed to load Chart.js: ' + e));
+      document.head.appendChild(s);
     });
-    </script>
+  }
+
+  // draw centered message inside canvas container
+  function drawMessage(text) {
+    try {
+      // clear canvas area
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#f7fafc';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#718096';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    } catch (e) {
+      // fallback: put message into DOM under canvas
+      let fallback = document.getElementById('analytics-fallback-msg');
+      if (!fallback) {
+        fallback = document.createElement('div');
+        fallback.id = 'analytics-fallback-msg';
+        canvas.parentElement.appendChild(fallback);
+      }
+      fallback.textContent = text;
+      fallback.style.color = '#718096';
+      fallback.style.padding = '1rem';
+    }
+  }
+
+  function createOrUpdateChart(labels, accepted, rejected) {
+    const datasets = [
+      { label: 'Accepted', data: accepted, backgroundColor: 'rgba(34,197,94,0.85)' },
+      { label: 'Rejected', data: rejected, backgroundColor: 'rgba(239,68,68,0.85)' }
+    ];
+
+    const cfg = {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          x: { stacked: true, ticks: { maxRotation: 45, minRotation: 0 } },
+          y: { stacked: true, beginAtZero: true, ticks: { precision:0 } }
+        }
+      }
+    };
+
+    if (analyticsChart) {
+      analyticsChart.data.labels = labels;
+      analyticsChart.data.datasets[0].data = accepted;
+      analyticsChart.data.datasets[1].data = rejected;
+      analyticsChart.update();
+    } else {
+      analyticsChart = new Chart(ctx, cfg);
+    }
+  }
+
+  async function loadAnalytics(period = 'day') {
+    try {
+      drawMessage('Loading analytics...');
+      // ensure Chart.js loaded before attempting to render later
+      await loadChartJs().catch((err) => {
+        console.warn('Chart.js load failed:', err);
+        // still proceed to fetch data, but Chart may be unavailable
+      });
+
+      const res = await fetch(`/api/sort-analytics?period=${encodeURIComponent(period)}`, { credentials: 'same-origin' });
+      if (!res.ok) {
+        const txt = await res.text().catch(()=>res.statusText || 'Error');
+        console.warn('Analytics fetch failed', res.status, txt);
+        drawMessage('Error loading analytics');
+        return;
+      }
+
+      const payload = await res.json();
+
+      if (!payload || !payload.labels || payload.labels.length === 0) {
+        drawMessage('No sorting data available for selected range');
+        if (analyticsChart) { analyticsChart.destroy(); analyticsChart = null; }
+        return;
+      }
+
+      const labels = payload.labels || [];
+      const accepted = payload.accepted || labels.map(()=>0);
+      const rejected = payload.rejected || labels.map(()=>0);
+
+      // shorten long labels for display
+      const shortLabels = labels.map(l => (typeof l === 'string' && l.length > 14) ? l.slice(0,14) + '…' : l);
+
+      // ensure canvas size fits parent for crisp rendering
+      resizeCanvasToParent();
+
+      if (!window.Chart) {
+        // Chart.js couldn't be loaded: display a simple text summary table
+        let html = '<div style="padding:1rem"><strong>Analytics summary</strong><ul>';
+        for (let i=0;i<labels.length;i++){
+          html += `<li>${labels[i]} — Accepted: ${accepted[i] || 0}, Rejected: ${rejected[i] || 0}</li>`;
+        }
+        html += '</ul></div>';
+        canvas.parentElement.innerHTML = html;
+        return;
+      }
+
+      createOrUpdateChart(shortLabels, accepted, rejected);
+    } catch (e) {
+      console.error('loadAnalytics error', e);
+      drawMessage('Error loading analytics');
+    }
+  }
+
+  // ui wiring
+  refreshBtn && refreshBtn.addEventListener('click', () => loadAnalytics(periodSelect.value));
+  periodSelect && periodSelect.addEventListener('change', () => loadAnalytics(periodSelect.value));
+
+  // size helpers
+  function resizeCanvasToParent() {
+    const parent = canvas.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    // set canvas pixel size to match display size for Chart.js crispness
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(600, rect.width) * dpr;
+    canvas.height = Math.max(260, rect.height) * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = Math.max(260, rect.height) + 'px';
+    if (analyticsChart) analyticsChart.resize();
+  }
+  window.addEventListener('resize', () => { resizeCanvasToParent(); loadAnalytics(periodSelect.value); });
+
+  // initial load
+  resizeCanvasToParent();
+  loadAnalytics(periodSelect.value);
+});
+</script>
 {% endblock %}

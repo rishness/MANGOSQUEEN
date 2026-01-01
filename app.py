@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, session, request, flash, jsonify, make_response
+from flask import Flask, render_template, redirect, url_for, session, request, flash, jsonify, make_response, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -13,15 +13,14 @@ import string
 import smtplib
 import numpy as np
 import google.generativeai as genai
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from PIL import Image
+from PIL import Image  # already imported in file, kept for clarity
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 import tensorflow as tf
 from functools import wraps
-from werkzeug.middleware.proxy_fix import ProxyFix 
-import requests
 
 # Define base directory and load .env
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -30,27 +29,14 @@ load_dotenv(os.path.join(basedir, '.env'))
 app = Flask(__name__)
 
 # ==========================================
-#  ENVIRONMENT CHECK
-# ==========================================
-# 1. Checks if running on Render (auto-detected)
-# 2. Checks if FLASK_ENV is set to 'production' (For Hostinger/VPS)
-IS_PRODUCTION = os.getenv('RENDER') is not None or os.getenv('FLASK_ENV') == 'production'
-
-print("---------------------------------------------------------")
-if IS_PRODUCTION:
-    print(f"✅ RUNNING IN PRODUCTION MODE (Secure Cookies: ON)")
-else:
-    print(f"⚠️  RUNNING IN DEVELOPMENT MODE (Secure Cookies: OFF)")
-print("---------------------------------------------------------")
-
-# ==========================================
-#  GEMINI AI & CHATBOT CONFIGURATION
+#  GEMINI AI & CHATBOT CONFIGURATION (FIXED)
 # ==========================================
 
 # 1. Load API Key
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
-# 2. Define System Instructions
+# 2. Define System Instructions (The "Brain")
+# CRITICAL FIX: Rule 3 is now permissive for harmless general topics/jokes.
 SYSTEM_INSTRUCTION_TEXT = """
 You are "Mangosteenify", the expert assistant for the MangosQueen application.
 
@@ -95,8 +81,10 @@ model = None
 if GOOGLE_API_KEY:
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
+        
+        # Configure Model with System Instructions (This ensures rules are ALWAYS active)
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash", 
+            model_name="gemini-2.0-flash",
             system_instruction=SYSTEM_INSTRUCTION_TEXT, 
             generation_config={
                 "temperature": 0.7,
@@ -120,18 +108,15 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-dev-key-if-env-fails
 
 # FIXED: Configure session to expire on browser close
 app.config.update(
-    # Only use Secure cookies (HTTPS) if in Production. False for Localhost (HTTP).
-    SESSION_COOKIE_SECURE=IS_PRODUCTION, 
+    SESSION_COOKIE_SECURE=True,           # Only send over HTTPS
     SESSION_COOKIE_HTTPONLY=True,         # Prevent JavaScript access
     SESSION_COOKIE_SAMESITE='Lax',        # CSRF protection
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Server-side session timeout
     SESSION_PERMANENT=False,              # CRITICAL: Make sessions non-persistent
 )
 
-# FIXED: Only use ProxyFix in Production (Render/Hostinger)
-if IS_PRODUCTION:
-    # x_proto=1 ensures Flask knows you are using HTTPS on Hostinger
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 if not firebase_admin._apps:
     try:
@@ -171,6 +156,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 # -------------------- SESSION SECURITY DECORATOR --------------------
+# This is the "Gatekeeper" from the old version that fixes your issue.
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -180,6 +166,7 @@ def login_required(f):
             return redirect(url_for('login'))
         
         # 2. Prevent Caching (Fixes Back Button Issue)
+        # This tells the browser: "Do not save this page. Ask server every time."
         response = make_response(f(*args, **kwargs))
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
@@ -208,6 +195,7 @@ def login():
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        # CHANGED: Get raw input to allow for Username (which might have different casing) or Email
         login_input = request.form['email'].strip()
         password = request.form['password']
 
@@ -233,13 +221,14 @@ def login():
             
             if check_password_hash(user['password'], password):
                 session['logged_in'] = True
+                
+                # CHANGED: Store the actual email from DB, not the input (which could be a username)
                 session['email'] = user['email']
+                
                 session['user_id'] = user['id']
                 session['login_message_shown'] = False
-                
-                # CRITICAL: Force session modified to ensure cookie is sent
-                session.modified = True 
-                session.permanent = False
+                # CRITICAL FIX: Explicitly set session to non-persistent
+                session.permanent = False  # This ensures session expires on browser close
                 
                 users_ref.document(user['id']).update({
                     'datetime_login': datetime.now().isoformat()
@@ -273,7 +262,8 @@ def logout():
         except Exception as e:
             print(f"Error updating logout time: {e}")
     
-    session.clear() 
+    session.clear() # Completely clear the session
+    
     flash("Logged Out Successfully", "info")
     return redirect(url_for('home'))
 
@@ -307,24 +297,25 @@ def add_cors_headers(f):
             return response
         
         # Call the actual route function
-        response_obj = f(*args, **kwargs)
+        response = f(*args, **kwargs)
         
         # Add headers to the response
-        if isinstance(response_obj, tuple):
+        if isinstance(response, tuple):
             # Response is a tuple (data, status, headers)
-            data, status, headers = response_obj
-            if headers is None:
-                headers = {}
-            headers.update(response_headers)
-            return data, status, headers
+            if len(response) == 3:
+                data, status, headers = response
+                if headers is None:
+                    headers = {}
+                headers.update(response_headers)
+                return data, status, headers
+            elif len(response) == 2:
+                data, status = response
+                return data, status, response_headers
+            else:
+                return response[0], 200, response_headers
         else:
-            # Response is just data (Response Object)
-            # Ensure we don't overwrite existing headers if we can help it, 
-            # but usually this returns a Response object
-            if hasattr(response_obj, 'headers'):
-                response_obj.headers.extend(response_headers)
-                return response_obj
-            return response_obj, 200, response_headers
+            # Response is just data
+            return response, 200, response_headers
     
     return decorated_function
 
@@ -352,15 +343,30 @@ def google_login():
             return jsonify({'success': False, 'message': 'No ID token provided'}), 400
 
         try:
-            # Verify the token
-            decoded_token = auth.verify_id_token(id_token)
+            # Verify the token with enhanced error handling
+            # CRITICAL FIX: Added clock_skew_seconds=10 to handle server time differences
+            decoded_token = auth.verify_id_token(id_token, clock_skew_seconds=10)
             uid = decoded_token['uid']
-            print(f"✅ Token verified for UID: {uid}")
+            print(f"✅ Token verified for UID: {uid}, Email: {decoded_token.get('email')}")
             
+            # Additional verification: check if token email matches provided email
             token_email = decoded_token.get('email')
             if token_email and email and token_email.lower() != email.lower():
+                print(f"❌ Email mismatch: token={token_email}, provided={email}")
                 return jsonify({'success': False, 'message': 'Email verification failed'}), 401
                 
+        except ValueError as ve:
+            print(f"❌ Token validation error (ValueError): {ve}")
+            return jsonify({'success': False, 'message': 'Invalid token format'}), 401
+        except auth.ExpiredIdTokenError:
+            print("❌ Token has expired")
+            return jsonify({'success': False, 'message': 'Token has expired'}), 401
+        except auth.RevokedIdTokenError:
+            print("❌ Token has been revoked")
+            return jsonify({'success': False, 'message': 'Token has been revoked'}), 401
+        except auth.InvalidIdTokenError:
+            print("❌ Invalid token")
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
         except Exception as verify_error:
             print(f"❌ Token verification error: {verify_error}")
             return jsonify({'success': False, 'message': 'Invalid ID token'}), 401
@@ -377,6 +383,7 @@ def google_login():
                 # Existing user
                 user_doc = users[0]
                 user_id = user_doc.id
+                print(f"🔄 Updating existing user: {user_id}")
                 
                 update_data = {
                     'datetime_login': datetime.now().isoformat(),
@@ -389,12 +396,15 @@ def google_login():
                         update_data['photo_url'] = photo_url
                 
                 users_ref.document(user_id).update(update_data)
+                print(f"✅ Updated existing user: {user_id}")
                 
             else:
                 # New user
                 username_base = email.split('@')[0]
                 username = username_base
                 counter = 1
+                
+                # Ensure unique username
                 while True:
                     username_query = users_ref.where('username', '==', username).limit(1).get()
                     if len(username_query) == 0:
@@ -415,15 +425,26 @@ def google_login():
                     'datetime_logout': None,
                     'created_at': datetime.now().isoformat()
                 }
+                
                 doc_ref = users_ref.add(new_user)
                 user_id = doc_ref[1].id
+                print(f"✅ Created new user: {user_id}")
                 
         except Exception as db_error:
             print(f"❌ Database error: {db_error}")
+            import traceback
+            traceback.print_exc()
             return jsonify({'success': False, 'message': 'Database error'}), 500
+
+        if not user_id:
+            print("❌ No user ID obtained from database operations")
+            return jsonify({'success': False, 'message': 'User creation failed'}), 500
 
         # Session management
         try:
+            # FIX: Clear session before setting new one to avoid conflicts
+            session.clear()
+            
             session['logged_in'] = True
             session['username'] = email.split('@')[0]
             session['email'] = email
@@ -431,9 +452,8 @@ def google_login():
             session['login_message_shown'] = False
             session['auth_method'] = 'google'
             
-            # CRITICAL FIX: Ensure session is marked as modified
-            session.modified = True
-            session.permanent = False
+            # CRITICAL FIX: Explicitly set session to non-persistent
+            session.permanent = False  # This ensures session expires on browser close
             
             print(f"✅ Session created for user: {user_id}")
             
@@ -450,10 +470,14 @@ def google_login():
             'user_id': user_id
         }
 
+        print(f"🎉 Google login successful for user: {user_id}")
         return jsonify(response_data)
 
     except Exception as e:
         print(f"❌ Unexpected error in google_login: {e}")
+        import traceback
+        traceback.print_exc()
+        
         return jsonify({
             'success': False, 
             'message': f'Authentication failed: {str(e)}'
@@ -873,18 +897,31 @@ def allowed_file(filename):
 
 # --- UPDATED: Helper for Standard Preprocessing ---
 def preprocess_image_for_model(img):
+    """
+    Standard preprocessing for MobileNetV2 trained models.
+    Scales values to [-1, 1].
+    """
     if img.mode != 'RGB':
         img = img.convert('RGB')
     
+    # Resize to 224x224
     img = img.resize((224, 224))
+    
+    # Convert to float32 array
     img_array = np.array(img, dtype=np.float32)
+    
+    # Expand dimensions (1, 224, 224, 3)
     img_array = np.expand_dims(img_array, axis=0)
+    
+    # CRITICAL FIX: Scale to [-1, 1] instead of [0, 1]
+    # (x / 127.5) - 1.0  matches MobileNetV2 preprocess_input
     img_array = (img_array / 127.5) - 1.0
     
     return img_array
 
 # --- UPDATED: Predict function using TFLite ---
 def predict_disease(image_path):
+    """Predict disease from image file path using TFLite"""
     try:
         if interpreter is None:
             return {
@@ -893,14 +930,20 @@ def predict_disease(image_path):
                 'preventive_methods': ["Please contact system administrator"]
             }
             
+        # Load image with PIL
         img = Image.open(image_path)
+        
+        # Preprocess (Correct Logic)
         img_array = preprocess_image_for_model(img)
         
+        # TFLite Inference
         interpreter.set_tensor(input_details[0]['index'], img_array)
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
         
+        # Get result from the first batch
         predictions = output_data[0]
+        
         predicted_class_index = np.argmax(predictions)
         confidence_score = float(predictions[predicted_class_index]) * 100
         
@@ -922,6 +965,7 @@ def predict_disease(image_path):
 
 # --- UPDATED: Real-time prediction using TFLite ---
 def predict_disease_from_base64(image_data):
+    """Predict disease from base64 image data - used for real-time detection"""
     try:
         if interpreter is None:
             return {
@@ -930,6 +974,7 @@ def predict_disease_from_base64(image_data):
                 'preventive_methods': ["Please contact system administrator"]
             }
         
+        # Decode Base64
         if image_data.startswith('data:image/'):
             image_format, base64_data = image_data.split(';base64,')
         else:
@@ -937,13 +982,18 @@ def predict_disease_from_base64(image_data):
         
         image_bytes = base64.b64decode(base64_data)
         img = Image.open(io.BytesIO(image_bytes))
+        
+        # Preprocess (Correct Logic)
         img_array = preprocess_image_for_model(img)
         
+        # TFLite Inference
         interpreter.set_tensor(input_details[0]['index'], img_array)
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
         
+        # Get result
         predictions = output_data[0]
+        
         predicted_class_index = np.argmax(predictions)
         confidence_score = float(predictions[predicted_class_index]) * 100
         
@@ -964,6 +1014,7 @@ def predict_disease_from_base64(image_data):
         }
 
 def save_scan_to_db(scan_data):
+    """Save scan data to Firestore"""
     try:
         doc_ref = db.collection('diseasedetection').add(scan_data)
         return doc_ref[1].id
@@ -972,6 +1023,7 @@ def save_scan_to_db(scan_data):
         raise e
 
 def process_image_upload(file, user_id):
+    """Process file upload and return scan data"""
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
@@ -987,6 +1039,7 @@ def process_image_upload(file, user_id):
     }, prediction_results
 
 def process_camera_capture(image_data, user_id):
+    """Process camera capture and return scan data"""
     if image_data.startswith('data:image/'):
         image_format, base64_data = image_data.split(';base64,')
         image_ext = image_format.split('/')[-1]
@@ -1011,13 +1064,15 @@ def process_camera_capture(image_data, user_id):
         'datetime_scanned': datetime.now().isoformat()
     }, prediction_results
 
+    
 # -------------------- SCAN & PROCESSING ROUTES --------------------
 @app.route('/scan', methods=['GET', 'POST'])
-@login_required 
+@login_required # PROTECTED
 def scan():
     if request.method == 'POST':
         if 'image_data' in request.form and request.form['image_data']:
             try:
+                # User ID check is now handled by @login_required, but keeping for safety in logic
                 image_data = request.form['image_data']
                 scan_data, prediction_results = process_camera_capture(image_data, session['user_id'])
                 
@@ -1071,7 +1126,7 @@ def scan():
     return render_template('scan.html', logged_in=True)
 
 @app.route('/results')
-@login_required 
+@login_required # PROTECTED
 def results():
     image_path = session.get('image_path')
     disease_name = session.get('disease_name')
@@ -1091,7 +1146,7 @@ def results():
 
 # -------------------- REAL-TIME DETECTION ROUTES --------------------
 @app.route('/realtime-scan', methods=['POST'])
-@login_required 
+@login_required # PROTECTED
 def realtime_scan():
     try:
         if 'image_data' not in request.form:
@@ -1115,54 +1170,92 @@ def realtime_scan():
         }), 500
 
 @app.route('/save-detection', methods=['POST'])
-@login_required 
+@login_required # PROTECTED
 def save_detection():
+    """
+    Save a realtime detection into a per-day 'sorts' document with subcollection 'records'.
+    Each day document stores aggregated counters: accepted, rejected, total.
+    Individual detections are stored under sorts/{YYYY-MM-DD}/records.
+    """
     try:
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Session expired'}), 401
-        
+
         if 'image_data' not in request.form or 'detection_data' not in request.form:
             return jsonify({'success': False, 'error': 'Missing required data'}), 400
-        
+
         image_data = request.form['image_data']
         detection_info = json.loads(request.form['detection_data'])
-        
+
+        # Save image file
         if image_data.startswith('data:image/'):
             image_format, base64_data = image_data.split(';base64,')
             image_ext = image_format.split('/')[-1]
         else:
             base64_data = image_data
             image_ext = 'jpg'
-        
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"realtime_detection_{timestamp}.{image_ext}"
+
+        timestamp = datetime.now()
+        filename = f"realtime_detection_{timestamp.strftime('%Y%m%d_%H%M%S_%f')}.{image_ext}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
+
         with open(file_path, 'wb') as f:
             f.write(base64.b64decode(base64_data))
-        
-        scan_data = {
+
+        # Determine date-bucket document (YYYY-MM-DD)
+        date_key = timestamp.strftime('%Y-%m-%d')
+        day_doc_ref = db.collection('sorts').document(date_key)
+
+        # Prepare record
+        record = {
             'user_id': session['user_id'],
             'image': os.path.join('uploads', filename).replace('\\', '/'),
-            'prediction': detection_info['predicted_class'],
-            'confidence': float(detection_info['confidence']),
-            'datetime_scanned': datetime.now().isoformat()
+            'prediction': detection_info.get('predicted_class'),
+            'confidence': float(detection_info.get('confidence', 0)),
+            'datetime_scanned': timestamp.isoformat()
         }
-        
+
+        # Save record to subcollection
+        records_ref = day_doc_ref.collection('records')
+        rec = records_ref.add(record)
+
+        # Update aggregations on day document (atomic increment)
+        accepted_keywords = ['half', 'healthy', 'ripe', 'over']
+        pred_text = str(record['prediction'] or '').lower()
+        accepted = any(k in pred_text for k in accepted_keywords)
+
+        # Use transaction or atomic increment
         try:
-            scan_id = save_scan_to_db(scan_data)
+            day_doc_ref.set({
+                'date': date_key,
+                'user_id': session['user_id']
+            }, merge=True)
+            # Firestore Increment
+            day_doc_ref.update({
+                'total': firestore.Increment(1),
+                'accepted': firestore.Increment(1 if accepted else 0),
+                'rejected': firestore.Increment(0 if accepted else 1)
+            })
         except Exception as e:
-            return jsonify({
-                'success': False, 
-                'error': f'Database error: {str(e)}'
-            }), 500
-        
+            # If update fails because doc doesn't exist, set initial counts
+            try:
+                day_doc_ref.set({
+                    'date': date_key,
+                    'user_id': session['user_id'],
+                    'total': 1,
+                    'accepted': 1 if accepted else 0,
+                    'rejected': 0 if accepted else 1
+                }, merge=True)
+            except Exception as e2:
+                print(f"Error updating day summary: {e2}")
+
         return jsonify({
             'success': True,
             'message': 'Real-time detection saved successfully',
-            'scan_id': scan_id
+            'scan_id': rec[1].id,
+            'date_key': date_key
         })
-        
+
     except Exception as e:
         print(f"Error saving detection: {e}")
         return jsonify({
@@ -1172,44 +1265,23 @@ def save_detection():
 
 # -------------------- PROFILE & SETTINGS ROUTES --------------------
 @app.route('/sort')
-@login_required 
+@login_required # PROTECTED
 def sort():
-    scans = []
     try:
-        # 1. Kunin ang mga folders ng petsa sa 'sorts' collection
-        # Kukuha tayo ng documents kung saan match ang user_id
-        date_docs = db.collection('sorts').where('user_id', '==', session['user_id']).get()
-
-        # 2. Isa-isahin ang bawat petsa para kunin ang laman (records)
-        for day_doc in date_docs:
-            # Pumasok sa loob ng sub-collection na 'records'
-            records = day_doc.reference.collection('records').order_by('datetime_scanned', direction=firestore.Query.DESCENDING).get()
-            
-            for rec in records:
-                scan_data = rec.to_dict()
-                scan_data['id'] = rec.id
-                
-                # Siguraduhin natin na tama ang format para sa HTML
-                # (Kung 'prediction' ang gamit sa HTML, dapat meron nito)
-                if 'prediction' not in scan_data:
-                    scan_data['prediction'] = 'Unknown'
-                    
-                scans.append(scan_data)
-
-        # 3. Ayusin ang final list mula sa pinakabago (Newest to Oldest)
-        # Dahil galing sa iba't ibang folder, manual sort natin sa Python side
-        scans.sort(key=lambda x: x.get('datetime_scanned', ''), reverse=True)
-
+        docs = db.collection('fruitsorter').where('user_id', '==', session['user_id']).order_by('datetime_sorted', direction=firestore.Query.DESCENDING).get()
+        scans = []
+        for doc in docs:
+            scan_data = doc.to_dict()
+            scan_data['id'] = doc.id
+            scans.append(scan_data)
     except Exception as e:
-        print(f"Error fetching sort history: {e}")
+        print(f"Error fetching sort data: {e}")
         scans = []
     
     return render_template('sort.html', logged_in=True, scans=scans)
 
-
-
 @app.route('/about')
-@login_required 
+@login_required # PROTECTED
 def about():
     return render_template('about.html', logged_in=True)
 
@@ -1272,6 +1344,7 @@ def send_verification_email_for_profile(email, code):
 @app.route('/send-profile-verification', methods=['POST'])
 @login_required
 def send_profile_verification():
+    # Only for Google users, use the session email (Email is not editable)
     if not session.get('email'):
         return jsonify({'success': False, 'message': 'User email not found.'})
     
@@ -1287,7 +1360,7 @@ def send_profile_verification():
         return jsonify({'success': False, 'message': 'Failed to send verification code'})
 
 @app.route('/profile', methods=['GET'])
-@login_required 
+@login_required # PROTECTED
 def profile():
     user = None
     
@@ -1297,11 +1370,14 @@ def profile():
             if user_doc.exists:
                 user = user_doc.to_dict()
                 user['id'] = user_doc.id
+                
+                # Ensure auth_method exists
                 if 'auth_method' not in user:
                     user['auth_method'] = 'manual'
         except Exception as e:
             print(f"Error fetching user by ID: {e}")
     
+    # Fallback logic from original code (preserved just in case)
     if user is None and 'username' in session:
         try:
             username = session.get('username')
@@ -1323,6 +1399,7 @@ def profile():
 @app.route('/update-profile', methods=['POST'])
 @login_required
 def update_profile():
+    # Handles JSON updates to allow for partial page reloads (error messages)
     try:
         user_id = session.get('user_id')
         user_doc_ref = db.collection('user').document(user_id)
@@ -1334,6 +1411,7 @@ def update_profile():
         user_data = user_doc.to_dict()
         auth_method = user_data.get('auth_method', 'manual')
         
+        # Get Data from JSON
         data = request.get_json()
         new_name = data.get('name', '').strip()
         new_username = data.get('username', '').strip()
@@ -1341,6 +1419,7 @@ def update_profile():
         if not new_name or not new_username:
             return jsonify({'success': False, 'message': 'Name and Username are required.'})
             
+        # 1. Check Username Uniqueness (if changed)
         if new_username != user_data.get('username'):
             check = db.collection('user').where('username', '==', new_username).limit(1).get()
             if len(check) > 0:
@@ -1351,7 +1430,9 @@ def update_profile():
             'username': new_username
         }
         
+        # 2. Logic based on Auth Method
         if auth_method == 'manual':
+            # Manual: Check Current Password
             current_password = data.get('current_password', '')
             if not current_password:
                 return jsonify({'success': False, 'message': 'Current password is required.'})
@@ -1362,6 +1443,7 @@ def update_profile():
             if not check_password_hash(user_data.get('password', ''), current_password):
                 return jsonify({'success': False, 'message': 'Incorrect current password.'})
             
+            # Change Password (Optional)
             if data.get('change_password'):
                 new_pass = data.get('new_password', '')
                 if len(new_pass) < 6:
@@ -1369,6 +1451,7 @@ def update_profile():
                 update_payload['password'] = generate_password_hash(new_pass)
                 
         elif auth_method == 'google':
+            # Google: Check Verification Code
             entered_code = data.get('verification_code', '')
             stored_code = session.get('profile_verification_code')
             expiry = session.get('profile_verification_expires')
@@ -1386,9 +1469,13 @@ def update_profile():
             if entered_code != stored_code:
                 return jsonify({'success': False, 'message': 'Invalid verification code.', 'field': 'code'})
                 
+            # Clear code on success
             session.pop('profile_verification_code', None)
 
+        # 3. Save to DB
         user_doc_ref.update(update_payload)
+        
+        # Update Session
         session['username'] = new_username
         
         return jsonify({'success': True, 'message': 'Save. You successfully update your profile.'})
@@ -1400,7 +1487,7 @@ def update_profile():
 # -------------------- API ENDPOINTS --------------------
 
 @app.route('/api/disease-data')
-@login_required 
+@login_required # PROTECTED
 def get_disease_data():
     disease_filter = request.args.get('diseaseType', 'all')
     date_from = request.args.get('dateFrom')
@@ -1445,7 +1532,7 @@ def get_disease_data():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/delete-scan/<scan_id>', methods=['DELETE'])
-@login_required 
+@login_required # PROTECTED
 def delete_scan(scan_id):
     try:
         doc = db.collection('diseasedetection').document(scan_id).get()
@@ -1461,10 +1548,11 @@ def delete_scan(scan_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# -------------------- ROBUST CHATBOT ROUTE (FIXED) --------------------
+# -------------------- ROBUST CHATBOT ROUTE (UPDATED) --------------------
 @app.route('/api/chat', methods=['POST'])
 @login_required 
 def chat():
+    # 1. Check if Model is loaded
     if not model:
         print("❌ ERROR: Gemini Model is not configured. Check your API Key.")
         return jsonify({'reply': "System Error: API Key is missing or invalid."})
@@ -1478,12 +1566,16 @@ def chat():
 
         print(f"📩 Received message: {user_message}") 
 
+        # 2. Get History (Memory)
         chat_history = session.get('chat_history', [])
         
+        # 3. Start Chat Session
         chat_session = model.start_chat(history=chat_history)
         
+        # 4. Send Message
         response = chat_session.send_message(user_message)
         
+        # 5. Extract Text SAFELY
         try:
             bot_reply = response.text
         except ValueError:
@@ -1492,55 +1584,41 @@ def chat():
 
         print(f"🤖 Bot Reply: {bot_reply}") 
 
+        # 6. Update History
         chat_history.append({'role': 'user', 'parts': [user_message]})
         chat_history.append({'role': 'model', 'parts': [bot_reply]})
-        session['chat_history'] = chat_history[-20:] 
+        
+        # Limit history to last 10 turns to save Token Quota
+        session['chat_history'] = chat_history[-10:] # Reduced to 10 to prevent Token Limit errors
         session.modified = True
 
         return jsonify({'reply': bot_reply})
 
     except Exception as e:
-        print(f"❌ CRITICAL ERROR in /api/chat: {e}")
-        import traceback
-        traceback.print_exc() 
-        return jsonify({'reply': f"Error: {str(e)}"}), 500
+        error_msg = str(e)
+        print(f"❌ CHAT ERROR: {error_msg}")
+        
+        # Check for Quota Error (429)
+        if "429" in error_msg or "quota" in error_msg.lower():
+            return jsonify({'reply': "I'm thinking too hard! My brain is overloaded (Quota Exceeded). Please wait 1 minute and try again."})
+            
+        return jsonify({'reply': "I encountered a system error. Please try again."}), 500
     
-# -------------------- ERROR HANDLERS --------------------
-
-@app.errorhandler(404)
-def not_found_error(error):
-    if request.path.startswith('/api/'):
-        return jsonify({'success': False, 'message': 'Resource not found'}), 404
-    return "Page not found", 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    if request.path.startswith('/api/'):
-        return jsonify({'success': False, 'message': 'Internal server error'}), 500
-    return render_template('500.html'), 500
-
-
-# -----------------------------------------------------------------------
-
-
-
-# ==========================================
-#  HARDWARE BRIDGE & ANALYTICS (NEW)
-# ==========================================
-
-# Raspi connection config
-RASPI_HOST = os.getenv('RASPI_HOST', '192.168.137.191')  # IP of your Machine
+# Raspi connection config (override via .env if needed)
+RASPI_HOST = os.getenv('RASPI_HOST', '10.183.102.246')  # your Pi IP
 RASPI_VIDEO_PATH = os.getenv('RASPI_VIDEO_PATH', f'http://{RASPI_HOST}:5000/video_feed')
 RASPI_SERVO_URL = os.getenv('RASPI_SERVO_URL', f'http://{RASPI_HOST}:5000/move_servo')
 
-# 1. Check if Machine is Online
+# Simple ping endpoint with diagnostic info
 @app.route('/api/raspi_ping')
 @login_required
 def raspi_ping():
     try:
+        # try a short streaming GET to confirm MJPEG endpoint and capture headers/status
         r = requests.get(RASPI_VIDEO_PATH, stream=True, timeout=5)
         status = r.status_code
         ctype = r.headers.get('Content-Type', '')
+        # read a small chunk to ensure the stream responds
         try:
             chunk = next(r.iter_content(chunk_size=1024))
         except Exception:
@@ -1552,19 +1630,22 @@ def raspi_ping():
         app.logger.warning(f"raspi_ping error: {e}")
         return jsonify({'ok': False, 'error': str(e)}), 503
 
-# 2. Proxy Video Stream (Fixes HTTPS/CORS issues)
+# Proxy MJPEG stream from RasPi so client can request same-origin
 @app.route('/raspi_stream')
 @login_required
 def raspi_stream():
     def stream_generator():
         try:
             with requests.get(RASPI_VIDEO_PATH, stream=True, timeout=(3, 10)) as r:
+                # stream raw chunks through
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:
                         yield chunk
         except Exception as e:
             app.logger.warning(f"Error proxying raspi stream: {e}")
+            # stop generator
             return
+    # Use the actual content-type if available; fallback to MJPEG
     try:
         head = requests.head(RASPI_VIDEO_PATH, timeout=3)
         content_type = head.headers.get('Content-Type', 'multipart/x-mixed-replace;boundary=frame')
@@ -1572,7 +1653,7 @@ def raspi_stream():
         content_type = 'multipart/x-mixed-replace; boundary=frame'
     return Response(stream_generator(), mimetype=content_type)
 
-# 3. Control Servo Motor
+# Proxy servo move commands to RasPi
 @app.route('/api/servo', methods=['POST'])
 @login_required
 def api_servo():
@@ -1587,19 +1668,23 @@ def api_servo():
         print(f"Servo proxy error: {e}")
         return jsonify({'error': str(e)}), 500
 
-# 4. Generate Performance Graphs
 @app.route('/api/sort-analytics')
 @login_required
 def sort_analytics():
+    """
+    Aggregates data from collection 'sorts' (per-day documents with subcollection 'records').
+    Supports period=day/week/month as before. Returns labels + accepted/rejected arrays and raw history.
+    """
     try:
         period = request.args.get('period', 'day').lower()
         now = datetime.now()
+
         labels = []
         buckets = {}
 
-        # Set Time Range
         if period == 'week':
             weeks = 12
+            # prepare ISO-week labels
             for i in range(weeks-1, -1, -1):
                 d = now - timedelta(weeks=i)
                 y, w, _ = d.isocalendar()
@@ -1615,7 +1700,7 @@ def sort_analytics():
                 label = f"{year}-{month:02d}"
                 labels.append(label)
                 buckets[label] = {'accepted': 0, 'rejected': 0, 'total': 0}
-        else: # Default: Day
+        else:
             days = 30
             for i in range(days-1, -1, -1):
                 d = now - timedelta(days=i)
@@ -1623,20 +1708,25 @@ def sort_analytics():
                 labels.append(label)
                 buckets[label] = {'accepted': 0, 'rejected': 0, 'total': 0}
 
-        # Fetch Data
+        # Fetch day documents for this user
         sorts_q = db.collection('sorts').where('user_id', '==', session['user_id']).get()
         history = []
 
         for day_doc in sorts_q:
             day = day_doc.to_dict()
             date_key = day.get('date')
-            if not date_key: continue
+            if not date_key:
+                continue
 
+            # determine which label this day maps to depending on period
             try:
                 dt_obj = datetime.fromisoformat(date_key + 'T00:00:00')
             except Exception:
-                try: dt_obj = datetime.strptime(date_key, '%Y-%m-%d')
-                except Exception: continue
+                # fallback parse
+                try:
+                    dt_obj = datetime.strptime(date_key, '%Y-%m-%d')
+                except Exception:
+                    continue
 
             if period == 'week':
                 y, w, _ = dt_obj.isocalendar()
@@ -1646,6 +1736,7 @@ def sort_analytics():
             else:
                 label = dt_obj.strftime('%Y-%m-%d')
 
+            # Read stored aggregated counters if present
             accepted_count = int(day.get('accepted') or 0)
             rejected_count = int(day.get('rejected') or 0)
             total_count = int(day.get('total') or (accepted_count + rejected_count))
@@ -1654,6 +1745,22 @@ def sort_analytics():
                 buckets[label]['accepted'] += accepted_count
                 buckets[label]['rejected'] += rejected_count
                 buckets[label]['total'] += total_count
+
+            # Optionally include recent records from subcollection (limit 50)
+            try:
+                recs = day_doc.reference.collection('records').where('user_id', '==', session['user_id']).order_by('datetime_scanned', direction=firestore.Query.DESCENDING).limit(50).get()
+                for r in recs:
+                    rdata = r.to_dict()
+                    history.append({
+                        'id': r.id,
+                        'datetime': rdata.get('datetime_scanned'),
+                        'prediction': rdata.get('prediction'),
+                        'confidence': float(rdata.get('confidence') or 0),
+                        'accepted': any(k in str(rdata.get('prediction','')).lower() for k in ['half','healthy','ripe','over']),
+                        'image': rdata.get('image')
+                    })
+            except Exception:
+                pass
 
         accepted = [buckets[l]['accepted'] for l in labels]
         rejected = [buckets[l]['rejected'] for l in labels]
@@ -1664,14 +1771,11 @@ def sort_analytics():
             'accepted': accepted,
             'rejected': rejected,
             'total': total,
-            'history': history
+            'history': sorted(history, key=lambda x: x['datetime'] or '', reverse=True)
         })
     except Exception as e:
         print(f"Error in sort_analytics: {e}")
         return jsonify({'error': str(e)}), 500
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
