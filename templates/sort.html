@@ -8,18 +8,12 @@
 
 <style>
     /* ------------------------------------------------------------------ */
-    /* --- I. UNIVERSAL & BASE STYLES (Matched to scan.html) ------------ */
+    /* --- I. UNIVERSAL & BASE STYLES ----------------------------------- */
     /* ------------------------------------------------------------------ */
     
     /* Page load transition */
-    body {
-        animation: pageLoadFade 0.3s ease-in;
-    }
-
-    @keyframes pageLoadFade {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
+    body { animation: pageLoadFade 0.3s ease-in; }
+    @keyframes pageLoadFade { from { opacity: 0; } to { opacity: 1; } }
 
     /* Main Container */
     .scan-page-container {
@@ -28,8 +22,7 @@
         flex-direction: column;
         padding-bottom: 2rem;
     }
-
-    /* Main Card Container */
+    
     .scan-container {
         max-width: 1700px;
         width: 100%;
@@ -62,480 +55,196 @@
         font-weight: 500;
     }
 
-    /* --- Button Styles --- */
+    /* --- Buttons --- */
     .control-btn {
-        padding: 0.8rem 1.8rem;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        font-size: clamp(0.85rem, 2vw, 1rem); 
-        background: white;
-        border: 2px solid transparent; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        min-width: 140px;
+        padding: 0.8rem 1.8rem; border-radius: 10px; font-weight: 600; cursor: pointer;
+        transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center;
+        gap: 0.5rem; font-size: clamp(0.85rem, 2vw, 1rem); background: white; border: 2px solid transparent; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 140px;
     }
+    .control-btn:disabled { background: #f5f5f5; color: #aaaaaa; border-color: #ddd; cursor: not-allowed; box-shadow: none; transform: none !important; }
 
-    .control-btn:disabled {
-        background: #f5f5f5;
-        color: #aaaaaa;
-        border-color: #ddd;
-        cursor: not-allowed;
-        box-shadow: none;
-        transform: none !important;
-    }
+    .btn-start { border-color: #667eea; color: #667eea; }
+    .btn-start:hover:not(:disabled) { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4); }
 
-    /* Start Button (PURPLE/Primary) */
-    .btn-start {
-        border-color: #667eea;
-        color: #667eea;
-    }
-    .btn-start:hover:not(:disabled) {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-    }
+    .btn-stop { border-color: #ffc107; color: #d39e00; }
+    .btn-stop:hover:not(:disabled) { background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: white; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4); }
 
-    /* Stop Button (Warning/Orange) */
-    .btn-stop {
-        border-color: #ffc107;
-        color: #d39e00;
-    }
-    .btn-stop:hover:not(:disabled) {
-        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
-    }
-
-    /* Reset Button (Red/Danger) */
-    .btn-reset {
-        border-color: #dc3545;
-        color: #dc3545;
-    }
-    .btn-reset:hover:not(:disabled) {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
-    }
+    .btn-reset { border-color: #dc3545; color: #dc3545; }
+    .btn-reset:hover:not(:disabled) { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4); }
     
-    /* --- Layout Sections --- */
-    /* Default is stacked (Mobile/Tablet) */
-    .sort-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        width: 100%;
-    }
-
-    .content-section {
-        background: #f8f9fa;
-        border-radius: 16px;
-        padding: 1.5rem;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    .section-title {
-        font-size: clamp(1rem, 2.5vw, 1.1rem);
-        font-weight: 700;
-        color: #4a5568;
-        margin-bottom: 1.2rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 0.5rem;
-        display: inline-block;
-    }
+    /* --- Grid Layout --- */
+    .sort-grid { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
+    .content-section { background: #f8f9fa; border-radius: 16px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .section-title { font-size: clamp(1rem, 2.5vw, 1.1rem); font-weight: 700; color: #4a5568; margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; display: inline-block; }
     
-    /* --- Camera Area --- */
+    /* --- Camera Area (Enhanced from V2) --- */
     .camera-feed-container {
-        width: 100%;
-        min-height: 350px;
-        max-height: 500px;
-        aspect-ratio: 16/9;
-        border-radius: 12px;
-        background: #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-        border: 2px dashed #cbd5e0;
+        width: 100%; min-height: 350px; max-height: 500px; aspect-ratio: 16/9;
+        border-radius: 12px; background: #e2e8f0; display: flex; align-items: center; justify-content: center;
+        overflow: hidden; position: relative; border: 2px dashed #cbd5e0; padding: 1rem; box-sizing: border-box;
     }
-    
-    .camera-placeholder i {
-        font-size: clamp(2rem, 8vw, 4rem); 
-    }
-
-    .camera-active {
-        background: white;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.5s;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
+    .camera-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+    .camera-placeholder img#raspi-stream { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+    #stream-offline-ui { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .75rem; z-index: 2; }
+    #stream-offline-ui.hidden { display: none; }
 
     /* --- Status Cards --- */
-    .status-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border: 1px solid #edf2f7;
-        transition: transform 0.2s;
-    }
-    .stat-card:hover {
-        transform: translateY(-2px);
-    }
-
-    .stat-value {
-        font-size: clamp(1.8rem, 4vw, 3rem);
-        font-weight: 800;
-        line-height: 1;
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #718096;
-        margin-top: 0.5rem;
-        letter-spacing: 0.05em;
-    }
-
-    /* Status Indicators */
-    .status-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
-    }
-    .status-indicator.online { background-color: #28a745; animation: pulse 2s infinite; }
-    .status-indicator.offline { background-color: #dc3545; }
-    @keyframes pulse {
-        0% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.6; transform: scale(1.1); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-
-    /* Charts Containers */
-    .chart-wrapper {
-        position: relative;
-        height: 300px;
-        width: 100%;
-    }
-    
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #edf2f7; transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-value { font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #718096; margin-top: 0.5rem; letter-spacing: 0.05em; }
+    .chart-wrapper { position: relative; height: 300px; width: 100%; }
     .text-success-custom { color: #28a745; }
     .text-danger-custom { color: #dc3545; }
 
-    /* Custom style for count update animation */
-    .count-update { 
-        animation: countPulse 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    /* --- ANALYTICS CONTROLS (From V1 - Required for Exports) --- */
+    .analytics-controls {
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+        gap: 15px; margin-bottom: 1rem; background: #fff; padding: 12px;
+        border-radius: 12px; border: 1px solid #e2e8f0;
     }
-    :root { 
-        --primary-color: #667eea; 
-        --success-color: #28a745; 
-        --danger-color: #dc3545; 
-    }
-    @keyframes countPulse { 
-        0% { transform: scale(1); } 
-        50% { transform: scale(1.3); color: var(--success-color); } 
-        100% { transform: scale(1); } 
+    .control-group-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .control-group-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .form-control-sm-custom {
+        border-radius: 8px; border: 1px solid #d1d5db; font-size: 13px;
+        padding: 8px 12px; height: 38px; min-width: 140px;
     }
 
+    .custom-input-group {
+        display: flex; align-items: center; background: #fff;
+        border-radius: 8px; border: 1px solid #d1d5db; overflow: hidden;
+    }
+    .custom-input-group .form-control {
+        border-radius: 0; border: none; border-right: 1px solid #e2e8f0;
+        font-size: 13px; padding: 0 8px; height: 36px; width: 110px;
+    }
+    .custom-input-group .input-group-text {
+        background: #f8f9fa; border: none; border-right: 1px solid #e2e8f0;
+        color: #6b7280; font-size: 12px; padding: 0 8px; height: 36px; display: flex; align-items: center;
+    }
+    .custom-input-group .btn-action {
+        border: none; border-left: 1px solid #e2e8f0; background: white;
+        padding: 0 12px; height: 36px; cursor: pointer; transition: background 0.2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .custom-input-group .btn-check-date { color: #10b981; }
+    .custom-input-group .btn-check-date:hover { background: #f0fdf4; }
+    .custom-input-group .btn-reset-date { color: #dc3545; }
+    .custom-input-group .btn-reset-date:hover { background: #fff5f5; }
+
+    .btn-sm-custom {
+        padding: 0 14px; height: 38px; font-size: 13px; border-radius: 8px; border: none;
+        font-weight: 600; color: white; display: inline-flex; align-items: center; justify-content: center;
+        gap: 6px; transition: transform 0.2s; cursor: pointer; text-decoration: none;
+    }
+    .btn-sm-custom:hover { transform: translateY(-2px); opacity: 0.9; }
+    .btn-print { background: #17a2b8; }
+    .btn-word { background: #0d6efd; }
+    .btn-csv { background: #ffc107; color: #333; }
+    .btn-refresh { background: #6c757d; }
 
     /* ------------------------------------------------------------------ */
-    /* --- II. MODAL STYLES (From scan.html) ---------------------------- */
+    /* --- III. RESPONSIVE DESIGN (Enhanced from V2) -------------------- */
     /* ------------------------------------------------------------------ */
-    .custom-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        justify-content: center;
-        align-items: center;
-        animation: modalFadeIn 0.3s ease;
-    }
 
-    .custom-modal.show {
-        display: flex;
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 16px;
-        padding: 2rem;
-        max-width: 90%;
-        width: 400px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        animation: modalSlideIn 0.3s ease;
-        position: relative;
-    }
-
-    @keyframes modalSlideIn {
-        from { transform: translateY(-50px) scale(0.9); opacity: 0; }
-        to { transform: translateY(0) scale(1); opacity: 1; }
-    }
-
-    .modal-icon {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .modal-icon.error {
-        color: #f5576c;
-    }
-
-    .modal-title {
-        font-size: clamp(1.3rem, 3vw, 1.6rem);
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .modal-message {
-        font-size: clamp(0.95rem, 2vw, 1.1rem);
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
-
-    .modal-buttons {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .modal-close-btn {
-        padding: 0.8rem 2rem;
-        border: none;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: clamp(0.9rem, 2vw, 1rem);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-    }
-
-    .modal-close-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* --- III. RESPONSIVE DESIGN (Applied from scan.html) -------------- */
-    /* ------------------------------------------------------------------ */
-    
-    /* Mobile Portrait (320px - 480px) */
-    @media (max-width: 480px) {
-        .scan-page-container {
-            margin-top: 0.5rem;
-        }
-
-        .scan-container {
-            padding: 1rem;
-            border-radius: 12px;
-        }
-
-        .scan-container h2 {
-            font-size: 1.5rem;
-        }
-
-        /* Stack buttons vertically for easier touch access */
-        .controls-wrapper {
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .control-btn {
-            width: 100%;
-            padding: 0.8rem;
-        }
-
-        /* Stack status cards */
-        .status-grid {
-            grid-template-columns: 1fr;
-            gap: 0.8rem;
-        }
-
-        .content-section {
-            padding: 1rem;
-        }
-
-        .chart-wrapper {
-            height: 250px;
-        }
-
-        .camera-feed-container {
-            min-height: 250px;
-            max-height: 350px;
-        }
+    /* Mobile */
+    @media (max-width: 768px) {
+        .scan-page-container { margin-top: 0.5rem; padding-left: 10px; padding-right: 10px; }
+        .scan-container { padding: 1rem; border-radius: 12px; }
+        .controls-wrapper { display: flex; flex-direction: column; width: 100%; }
+        .control-btn { width: 100%; margin-bottom: 0.5rem; min-width: 0; }
         
-        .modal-content {
-            width: 85%;
-            padding: 1.5rem;
-        }
-    }
-
-    /* Mobile Landscape / Small Tablet (481px - 768px) */
-    @media (min-width: 481px) and (max-width: 768px) {
-        .scan-container {
-            padding: 1.2rem;
-        }
-
-        .controls-wrapper {
-            flex-wrap: wrap;
-        }
-
-        .control-btn {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .chart-wrapper {
-            height: 280px;
-        }
-
-        .camera-feed-container {
-            min-height: 300px;
-            max-height: 400px;
-        }
+        /* Stack Analytics Controls */
+        .analytics-controls { flex-direction: column; align-items: stretch; gap: 12px; padding: 15px; }
+        .control-group-left, .control-group-right { flex-direction: column; width: 100%; align-items: stretch; gap: 10px; }
+        .form-control-sm-custom, .btn-refresh { width: 100%; }
+        .custom-input-group { width: 100%; display: flex; }
+        .custom-input-group .form-control { flex: 1; width: auto; min-width: 0; }
+        .export-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; margin-top: 5px; }
+        .export-group button { width: 100%; }
         
-        .modal-content {
-            width: 80%;
-        }
+        .status-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+        .chart-wrapper { height: 250px; }
+        .camera-feed-container { min-height: 200px; max-height: 300px; }
+        .modal-content { width: 85%; padding: 1.5rem; }
     }
 
     /* Tablet Landscape (769px - 1024px) */
     @media (min-width: 769px) and (max-width: 1024px) {
-        .scan-container {
-            padding: 1.5rem;
-        }
-
-        .camera-feed-container {
-            min-height: 400px;
-            max-height: 500px;
-        }
-
-        /* Grid starts to form a 2-column layout */
+        .scan-container { padding: 1.5rem; }
         .sort-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-areas: 
-                "controls controls"
-                "camera camera"
-                "status analytics";
+            display: grid; grid-template-columns: 1fr 1fr;
+            grid-template-areas: "controls controls" "camera camera" "status analytics";
         }
-        
         .section-controls { grid-area: controls; }
         .section-camera { grid-area: camera; }
         .section-status { grid-area: status; }
         .section-analytics { grid-area: analytics; }
         
-        .modal-content {
-            width: 450px;
-        }
+        /* Center controls on tablet */
+        .analytics-controls { justify-content: center; }
+        .control-group-left, .control-group-right { justify-content: center; width: 100%; }
+        .camera-feed-container { min-height: 400px; max-height: 500px; }
+        .modal-content { width: 450px; }
     }
 
     /* Desktop (1025px - 1440px) */
     @media (min-width: 1025px) and (max-width: 1440px) {
-        /* Full Dashboard Layout */
         .sort-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            grid-template-areas: 
-                "controls controls"
-                "camera status"
-                "analytics analytics";
+            display: grid; grid-template-columns: 1.2fr 0.8fr;
+            grid-template-areas: "controls controls" "camera status" "analytics analytics";
             gap: 1.5rem;
         }
-        
         .section-controls { grid-area: controls; }
         .section-camera { grid-area: camera; }
         .section-status { grid-area: status; }
         .section-analytics { grid-area: analytics; }
-
-        .camera-feed-container {
-            height: 100%;
-            min-height: 450px;
-            max-height: 550px;
-        }
+        .camera-feed-container { height: 100%; min-height: 450px; max-height: 550px; }
     }
 
-    /* Large Desktop (1441px+) */
+    /* Large Desktop (1441px+) - ADDED from V2 */
     @media (min-width: 1441px) {
-        .scan-container {
-            padding: 2.5rem;
-        }
-
+        .scan-container { padding: 2.5rem; }
         .sort-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            grid-template-areas: 
-                "controls controls"
-                "camera status"
-                "analytics analytics";
+            display: grid; grid-template-columns: 1.2fr 0.8fr;
+            grid-template-areas: "controls controls" "camera status" "analytics analytics";
             gap: 2rem;
         }
-
         .section-controls { grid-area: controls; }
         .section-camera { grid-area: camera; }
         .section-status { grid-area: status; }
         .section-analytics { grid-area: analytics; }
-
-        .camera-feed-container {
-            max-width: 100%;
-            min-height: 500px;
-            max-height: 600px;
-        }
-        
-        .modal-content {
-            width: 500px;
-        }
+        .camera-feed-container { max-width: 100%; min-height: 500px; max-height: 600px; }
+        .modal-content { width: 500px; }
     }
-
-    /* High DPI screens */
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-        .camera-feed-container {
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-        }
+    
+    /* Modal Styles */
+    .custom-modal {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 9999;
+        justify-content: center; align-items: center;
     }
+    .custom-modal.show { display: flex; }
+    .modal-content {
+        background: white; border-radius: 16px; padding: 2rem;
+        max-width: 90%; width: 400px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); text-align: center;
+        animation: modalSlideIn 0.3s ease;
+    }
+    @keyframes modalSlideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .modal-icon.error { color: #f5576c; }
+    .modal-icon.warning { color: #ffc107; }
+    .modal-title { margin-bottom: 0.5rem; font-size: 1.5rem; color: #333; }
+    .modal-message { color: #666; margin-bottom: 1.5rem; }
+    .modal-close-btn {
+        padding: 0.8rem 2rem; border: none; border-radius: 10px; font-weight: 600;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white; cursor: pointer; transition: transform 0.2s;
+    }
+    .modal-close-btn:hover { transform: translateY(-2px); }
 </style>
 
 <div class="scan-page-container">
@@ -548,36 +257,26 @@
             <div class="content-section section-controls">
                 <h4 class="section-title">Sorting Controls</h4>
                 <div class="d-flex justify-content-center gap-3 flex-wrap controls-wrapper">
-                    <button id="start-btn" class="control-btn btn-start">
-                        <i class="fas fa-play"></i> Start Machine
-                    </button>
-                    <button id="stop-btn" class="control-btn btn-stop" disabled>
-                        <i class="fas fa-stop"></i> Stop Machine
-                    </button>
-                    <button id="reset-btn" class="control-btn btn-reset" disabled>
-                        <i class="fas fa-redo"></i> Reset Data
-                    </button>
+                    <button id="start-btn" class="control-btn btn-start"><i class="fas fa-play"></i> Start Machine</button>
+                    <button id="stop-btn" class="control-btn btn-stop" disabled><i class="fas fa-stop"></i> Stop Machine</button>
+                    <button id="reset-btn" class="control-btn btn-reset" disabled><i class="fas fa-redo"></i> Reset Data</button>
                 </div>
             </div>
 
             <div class="content-section section-camera">
                 <h4 class="section-title">Live Camera Feed</h4>
                 <div class="camera-feed-container">
-                    <div class="camera-placeholder">
-                        <img id="raspi-stream" src="{{ url_for('raspi_stream') }}" alt="Camera stream" style="display:none;" />
-                        
-                        <div id="stream-offline-ui">
-                            <p>Camera offline. Click Connect to try.</p>
-                            <button id="btn-connect" class="control-btn btn-start">Connect Camera</button>
-                            <button id="btn-stop" class="control-btn btn-stop" disabled>Stop</button>
-                        </div>
+                  <div class="camera-placeholder">
+                    <img id="raspi-stream" src="{{ url_for('raspi_stream') }}" alt="Camera stream" style="display:none;" />
+                    <div id="stream-offline-ui">
+                      <button id="btn-connect" class="control-btn btn-start">Connect Camera</button>
                     </div>
+                  </div>
                 </div>
             </div>
 
             <div class="content-section section-status">
                 <h4 class="section-title">Current Status</h4>
-                
                 <div class="status-grid">
                     <div class="stat-card">
                         <div id="good-count" class="stat-value text-success-custom">0</div>
@@ -588,7 +287,6 @@
                         <div class="stat-label">Rejected</div>
                     </div>
                 </div>
-
                 <div class="mb-4">
                     <div class="progress" style="height: 12px; border-radius: 6px; background-color: #edf2f7;">
                         <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%; border-radius: 6px;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
@@ -598,16 +296,54 @@
                         <small id="progress-text" class="text-gray-700 font-bold">0%</small>
                     </div>
                 </div>
-
-                <div class="chart-wrapper" style="height: 220px;">
-                    <canvas id="sorting-pie-chart"></canvas>
                 </div>
-            </div>
 
             <div class="content-section section-analytics">
                 <h4 class="section-title">Performance Analytics</h4>
-                <div class="chart-wrapper">
-                    <canvas id="performance-chart"></canvas>
+                <div class="analytics-controls">
+                  <div class="control-group-left">
+                      <select id="analytics-period" class="form-control-sm-custom">
+                        <option value="day" selected>Last 30 days</option>
+                        <option value="week">Last 12 weeks</option>
+                        <option value="month">Last 12 months</option>
+                      </select>
+                      
+                      <button id="analytics-refresh" class="btn-sm-custom btn-refresh">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                      </button>
+                  </div>
+
+                  <div class="control-group-right">
+                      <div class="custom-input-group">
+                        <input type="date" id="sortStartDate" class="form-control" placeholder="Start">
+                        <span class="input-group-text">to</span>
+                        <input type="date" id="sortEndDate" class="form-control" placeholder="End">
+                        
+                        <button id="applyDateBtn" class="btn-action btn-check-date" title="Apply Filter">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        
+                        <button id="resetDateBtn" class="btn-action btn-reset-date" title="Reset Date Filter">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                      </div>
+
+                      <div class="export-group d-flex gap-2">
+                          <button id="printReportBtn" class="btn-sm-custom btn-print" title="Print Report">
+                            <i class="fas fa-print"></i>
+                          </button>
+                          <button id="wordReportBtn" class="btn-sm-custom btn-word" title="Export to Word">
+                            <i class="fas fa-file-word"></i>
+                          </button>
+                          <button id="downloadReportBtn" class="btn-sm-custom btn-csv" title="Export CSV">
+                            <i class="fas fa-file-csv"></i>
+                          </button>
+                      </div>
+                  </div>
+                </div>
+
+                <div style="padding:1rem;background:#fff;border-radius:8px;position:relative;">
+                  <canvas id="analyticsChart"></canvas>
                 </div>
             </div>
 
@@ -625,9 +361,22 @@
             The MangosQueen Sorting Device is not Turned On and Connected.
         </p>
         <div class="modal-buttons">
-            <button class="modal-close-btn" onclick="closeErrorModal()">
-                Dismiss
-            </button>
+            <button class="modal-close-btn" onclick="closeModal('error-modal')">Dismiss</button>
+        </div>
+    </div>
+</div>
+
+<div id="warning-modal" class="custom-modal">
+    <div class="modal-content">
+        <div class="modal-icon warning">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="modal-title">Attention Needed</h3>
+        <p class="modal-message" id="warning-modal-message">
+            Please check your input.
+        </p>
+        <div class="modal-buttons">
+            <button class="modal-close-btn" onclick="closeModal('warning-modal')">Okay</button>
         </div>
     </div>
 </div>
@@ -637,128 +386,523 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Elements
-      const startBtn = document.getElementById('start-btn');
-      const stopBtn = document.getElementById('stop-btn');
-      const resetBtn = document.getElementById('reset-btn');
-      const raspiImg = document.getElementById('raspi-stream');
-      const captureCanvas = document.getElementById('capture-canvas');
-      const ctx = captureCanvas.getContext('2d');
-    
-      // Endpoints
-      const realtimeScanUrl = '{{ url_for("realtime_scan") }}';
-      const saveDetectionUrl = '{{ url_for("save_detection") }}';
-    
-      // State
-      let detectInterval = null;
-      let goodCount = 0;
-      let rejectedCount = 0;
-      const accepted_keywords = ['half', 'healthy', 'ripe', 'over']; 
-    
-      function updateUI() {
-        document.getElementById('good-count').textContent = String(goodCount);
-        document.getElementById('rejected-count').textContent = String(rejectedCount);
-        const total = goodCount + rejectedCount;
-        const pct = total === 0 ? 0 : Math.round((goodCount / total) * 100);
-        document.getElementById('progress-bar').style.width = pct + '%';
-        document.getElementById('progress-text').textContent = pct + '%';
+// --- GLOBAL MODAL HELPER ---
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('show');
+}
+
+function showWarning(message) {
+    const modal = document.getElementById('warning-modal');
+    const msgEl = document.getElementById('warning-modal-message');
+    if (modal && msgEl) {
+        msgEl.textContent = message;
+        modal.classList.add('show');
+    } else {
+        alert(message); // fallback
+    }
+}
+
+// --- MAIN SORTING LOGIC ---
+document.addEventListener('DOMContentLoaded', function () {
+  const startBtn = document.getElementById('start-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const raspiImg = document.getElementById('raspi-stream');
+  const captureCanvas = document.getElementById('capture-canvas');
+  const ctx = captureCanvas.getContext('2d');
+
+  const realtimeScanUrl = '{{ url_for("realtime_scan") }}';
+  const saveDetectionUrl = '{{ url_for("save_detection") }}';
+
+  let detectInterval = null;
+  let goodCount = 0;
+  let rejectedCount = 0;
+  const accepted_keywords = ['half', 'healthy', 'ripe', 'over'];
+
+  function updateUI() {
+    document.getElementById('good-count').textContent = String(goodCount);
+    document.getElementById('rejected-count').textContent = String(rejectedCount);
+    const total = goodCount + rejectedCount;
+    const pct = total === 0 ? 0 : Math.round((goodCount / total) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = pct + '%';
+  }
+
+  async function saveDetectionToServer(imageData, detection) {
+    try {
+      const fd = new FormData();
+      fd.append('image_data', imageData);
+      fd.append('detection_data', JSON.stringify(detection));
+      const res = await fetch(saveDetectionUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+      return res.ok ? await res.json() : null;
+    } catch (e) {
+      console.warn('Save detection error', e);
+      return null;
+    }
+  }
+
+  async function analyzeOnceAndAct() {
+    if (!raspiImg || raspiImg.style.display === 'none') return;
+    try {
+      ctx.clearRect(0,0,224,224);
+      ctx.drawImage(raspiImg, 0, 0, 224, 224);
+      const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
+
+      const fd = new FormData();
+      fd.append('image_data', dataUrl);
+      const res = await fetch(realtimeScanUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+      if (!res.ok) return;
+      const payload = await res.json();
+      if (!payload || !payload.success) return;
+
+      const cls = String(payload.predicted_class || '').toLowerCase();
+      const accepted = accepted_keywords.some(k => cls.includes(k));
+
+      if (accepted) {
+        goodCount += 1;
+        await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'right'}) , credentials: 'same-origin' });
+        setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 800);
+      } else {
+        rejectedCount += 1;
+        await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'left'}), credentials: 'same-origin' });
+        setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 900);
       }
-    
-      // --- CORE LOGIC: Analyze Frame & Move Servo ---
-      async function analyzeOnceAndAct() {
-        if (!raspiImg || raspiImg.style.display === 'none') return;
-        try {
-          // 1. Capture image from video stream
-          ctx.clearRect(0,0,224,224);
-          ctx.drawImage(raspiImg, 0, 0, 224, 224);
-          const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
-    
-          // 2. Send to AI
-          const fd = new FormData();
-          fd.append('image_data', dataUrl);
-          const res = await fetch(realtimeScanUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
-          if (!res.ok) return;
-          const payload = await res.json();
-          if (!payload || !payload.success) return;
-    
-          // 3. Determine if Good or Bad
-          const cls = String(payload.predicted_class || '').toLowerCase();
-          const accepted = accepted_keywords.some(k => cls.includes(k));
-    
-          // 4. Move Servo & Update Counters
-          if (accepted) {
-            goodCount += 1;
-            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'right'}) , credentials: 'same-origin' });
-            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 800);
-          } else {
-            rejectedCount += 1;
-            await fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'left'}), credentials: 'same-origin' });
-            setTimeout(()=> fetch('{{ url_for("api_servo") }}', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({direction:'center'}), credentials: 'same-origin' }), 900);
+
+      const detection_info = {
+        predicted_class: payload.predicted_class,
+        confidence: payload.confidence
+      };
+      saveDetectionToServer(dataUrl, detection_info).catch(()=>{});
+      updateUI();
+    } catch (e) {
+      console.warn('Realtime analyze error', e);
+    }
+  }
+
+  function startDetectionLoop() {
+    if (detectInterval) return;
+    analyzeOnceAndAct();
+    detectInterval = setInterval(analyzeOnceAndAct, 1200);
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+    resetBtn.disabled = true;
+  }
+
+  function stopDetectionLoop() {
+    if (detectInterval) {
+      clearInterval(detectInterval);
+      detectInterval = null;
+    }
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    resetBtn.disabled = false;
+    try { raspiImg.src = ''; } catch(e){}
+    raspiImg.style.display = 'none';
+  }
+
+  function resetData() {
+    stopDetectionLoop();
+    goodCount = 0;
+    rejectedCount = 0;
+    updateUI();
+  }
+
+  startBtn.addEventListener('click', async () => {
+    startDetectionLoop();
+  });
+
+  stopBtn.addEventListener('click', stopDetectionLoop);
+  resetBtn.addEventListener('click', resetData);
+
+  startBtn.disabled = false;
+  stopBtn.disabled = true;
+  resetBtn.disabled = true;
+  updateUI();
+});
+
+// --- CAMERA CONNECTION LOGIC (Upgraded from V2) ---
+const btnConnect = document.getElementById('btn-connect');
+const raspiImg = document.getElementById('raspi-stream');
+const offlineUI = document.getElementById('stream-offline-ui');
+const errorModal = document.getElementById('error-modal');
+
+async function diagnosticPing() {
+  try {
+    const res = await fetch('{{ url_for("raspi_ping") }}', { credentials: 'same-origin' });
+    if (!res.ok) return { ok: false };
+    const j = await res.json();
+    return { ok: !!j.ok, status: j.status, content_type: j.content_type };
+  } catch (e) {
+    return { ok: false };
+  }
+}
+
+async function tryConnectFlow() {
+  if (!btnConnect) return;
+  btnConnect.disabled = true;
+  offlineUI?.classList.remove('hidden');
+  offlineUI && (offlineUI.innerHTML = '<button id="btn-connect" class="control-btn btn-start" disabled>Connecting...</button>');
+
+  const ping = await diagnosticPing();
+  const proxyUrl = '{{ url_for("raspi_stream") }}' + '?_t=' + Date.now();
+  const directUrl = 'http://10.183.102.246:5000/video_feed' + '?_t=' + Date.now();
+
+  function attachHandlers(url, onSuccess, onFail) {
+    raspiImg.onload = () => { raspiImg.onload = null; onSuccess(); };
+    raspiImg.onerror = (ev) => { raspiImg.onerror = null; onFail(ev); };
+    raspiImg.src = url;
+  }
+
+  const onSuccess = () => {
+    raspiImg.style.display = 'block';
+    offlineUI.classList.add('hidden');
+    document.getElementById('start-btn')?.removeAttribute('disabled');
+  };
+
+  const onFail = async () => {
+    const pageIsHTTPS = window.location.protocol === 'https:';
+    if (!pageIsHTTPS) {
+      attachHandlers(directUrl, onSuccess, () => {
+        btnConnect.disabled = false;
+        offlineUI.classList.remove('hidden');
+        offlineUI.innerHTML = '<button id="btn-connect" class="control-btn btn-start">Connect Camera</button>';
+        document.getElementById('error-modal-message').textContent = 'Could not connect to camera (proxy & direct). Check your network.';
+        if(errorModal) errorModal.classList.add('show');
+      });
+    } else {
+      btnConnect.disabled = false;
+      offlineUI.classList.remove('hidden');
+      offlineUI.innerHTML = '<button id="btn-connect" class="control-btn btn-start">Connect Camera</button>';
+      document.getElementById('error-modal-message').textContent = 'Proxy connection failed. Camera offline.';
+      if(errorModal) errorModal.classList.add('show');
+    }
+  };
+
+  attachHandlers(proxyUrl, onSuccess, onFail);
+  setTimeout(() => {
+    if (!raspiImg.complete || raspiImg.naturalWidth === 0) onFail();
+  }, 8000);
+}
+
+if (btnConnect) {
+  btnConnect.addEventListener('click', tryConnectFlow);
+  offlineUI?.addEventListener('click', (e) => {
+    if (e.target && e.target.id === 'btn-connect') tryConnectFlow();
+  });
+}
+
+// --- ANALYTICS & REPORT LOGIC (Merged: V1 Features + V2 Stability) ---
+document.addEventListener('DOMContentLoaded', function() {
+  const periodSelect = document.getElementById('analytics-period');
+  const refreshBtn = document.getElementById('analytics-refresh');
+  const applyDateBtn = document.getElementById('applyDateBtn');
+  const resetDateBtn = document.getElementById('resetDateBtn');
+  const startDateInput = document.getElementById('sortStartDate');
+  const endDateInput = document.getElementById('sortEndDate');
+  const canvas = document.getElementById('analyticsChart');
+  const ctx = canvas ? canvas.getContext('2d') : null;
+  
+  let analyticsChart = null;
+  let analyticsHistory = []; 
+  let currentRangeText = ""; 
+
+  function drawMessage(text) {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#f7fafc';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#718096';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  }
+
+  function createOrUpdateChart(labels, accepted, rejected) {
+    if(!ctx) return;
+    const datasets = [
+      { label: 'Accepted', data: accepted, backgroundColor: 'rgba(34,197,94,0.85)' },
+      { label: 'Rejected', data: rejected, backgroundColor: 'rgba(239,68,68,0.85)' }
+    ];
+
+    if (analyticsChart) {
+      analyticsChart.data.labels = labels;
+      analyticsChart.data.datasets[0].data = accepted;
+      analyticsChart.data.datasets[1].data = rejected;
+      analyticsChart.update();
+    } else {
+      analyticsChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
           }
-    
-          // 5. Save Data
-          const detection_info = { predicted_class: payload.predicted_class, confidence: payload.confidence };
-          const saveFd = new FormData();
-          saveFd.append('image_data', dataUrl);
-          saveFd.append('detection_data', JSON.stringify(detection_info));
-          fetch(saveDetectionUrl, { method: 'POST', body: saveFd, credentials: 'same-origin' }).catch(()=>{});
-    
-          updateUI();
-        } catch (e) {
-          console.warn('Realtime analyze error', e);
         }
-      }
+      });
+    }
+  }
+
+  // Auto-resize logic from Version #2
+  function resizeCanvasToParent() {
+    const parent = canvas.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    // Set internal size to match visual size for crisp text
+    canvas.width = Math.max(600, rect.width) * dpr;
+    canvas.height = Math.max(260, rect.height) * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = Math.max(260, rect.height) + 'px';
     
-      function startDetectionLoop() {
-        if (detectInterval) return;
-        analyzeOnceAndAct();
-        detectInterval = setInterval(analyzeOnceAndAct, 1200); // Loop every 1.2 seconds
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        resetBtn.disabled = true;
-      }
-    
-      function stopDetectionLoop() {
-        if (detectInterval) {
-          clearInterval(detectInterval);
-          detectInterval = null;
-        }
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        resetBtn.disabled = false;
-      }
-    
-      startBtn.addEventListener('click', startDetectionLoop);
-      stopBtn.addEventListener('click', stopDetectionLoop);
+    if(analyticsChart) analyticsChart.resize();
+  }
+  window.addEventListener('resize', () => { resizeCanvasToParent(); });
+
+  async function loadAnalytics(period = 'day', customStart = null, customEnd = null) {
+    try {
+      drawMessage('Loading analytics...');
       
-      // --- CONNECTION LOGIC ---
-      const btnConnect = document.getElementById('btn-connect');
-      const offlineUI = document.getElementById('stream-offline-ui');
-    
-      async function tryConnectFlow() {
-        if (!btnConnect) return;
-        btnConnect.disabled = true;
-        offlineUI.innerHTML = '<p class="text-warning">Connecting to machine...</p>';
-    
-        // Try to load the proxy stream
-        raspiImg.src = '{{ url_for("raspi_stream") }}' + '?_t=' + Date.now();
-        raspiImg.onload = () => {
-            raspiImg.style.display = 'block';
-            offlineUI.style.display = 'none';
-            startBtn.disabled = false;
-        };
-        raspiImg.onerror = () => {
-            btnConnect.disabled = false;
-            offlineUI.innerHTML = '<p>Connection failed. Is the machine on?</p><button id="btn-connect" class="control-btn btn-start">Retry</button>';
-            // Re-attach listener to new button
-            document.getElementById('btn-connect').addEventListener('click', tryConnectFlow);
-        };
+      let url = `/api/sort-analytics?period=${encodeURIComponent(period)}`;
+      if (customStart && customEnd) {
+        url += `&startDate=${encodeURIComponent(customStart)}&endDate=${encodeURIComponent(customEnd)}`;
+        currentRangeText = `${customStart} to ${customEnd}`;
+      } else {
+        const pMap = {'day':'Last 30 Days', 'week':'Last 12 Weeks', 'month':'Last 12 Months'};
+        currentRangeText = pMap[period] || period;
       }
+
+      const res = await fetch(url, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('API Error');
+      const payload = await res.json();
+
+      analyticsHistory = payload.history || [];
+
+      if (!payload.labels || payload.labels.length === 0) {
+        drawMessage('No sorting data available for this range');
+        if (analyticsChart) { analyticsChart.destroy(); analyticsChart = null; }
+        return;
+      }
+
+      resizeCanvasToParent();
+      createOrUpdateChart(payload.labels, payload.accepted, payload.rejected);
+    } catch (e) {
+      console.error(e);
+      drawMessage('Error loading data');
+    }
+  }
+
+  function getReportStats(data) {
+    const total = data.length;
+    const acceptedCount = data.filter(i => i.accepted).length;
+    const rejectedCount = total - acceptedCount;
+    const rate = total > 0 ? ((acceptedCount / total) * 100).toFixed(1) : 0;
+    return { total, acceptedCount, rejectedCount, rate };
+  }
+
+  // --- REPORT GENERATION (From V1) ---
+
+  // 1. PRINT REPORT
+  document.getElementById('printReportBtn').addEventListener('click', () => {
+    const data = analyticsHistory; 
+    if(data.length === 0) { 
+        showWarning('No data to print. Please try adjusting the date range.'); 
+        return; 
+    }
     
-      if (btnConnect) btnConnect.addEventListener('click', tryConnectFlow);
+    const { total, acceptedCount, rejectedCount, rate } = getReportStats(data);
+    const dateStr = new Date().toLocaleString();
+    const logoUrl = "{{ url_for('static', filename='images/logo.png') }}";
+
+    let rows = '';
+    data.forEach(item => {
+        rows += `
+            <tr>
+                <td>${new Date(item.datetime).toLocaleString()}</td>
+                <td>${item.prediction}</td>
+                <td>${item.confidence.toFixed(1)}%</td>
+                <td>${item.accepted ? '<span style="color:green;font-weight:bold;">Accepted</span>' : '<span style="color:red;font-weight:bold;">Rejected</span>'}</td>
+            </tr>
+        `;
     });
-    </script>
+
+    const printContent = `
+        <html>
+        <head>
+            <title>Sorting Report</title>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; margin: 20px; color: #333; }
+                .header { border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; display: flex; align-items: center; }
+                .logo { width: 60px; margin-right: 20px; }
+                .title { font-size: 24px; font-weight: 800; color: #667eea; text-transform: uppercase; }
+                .range-info { font-size: 14px; color: #555; margin-top: 5px; }
+                .summary { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 30px; }
+                .card { border: 1px solid #ddd; padding: 15px; text-align: center; flex: 1; background: #f8fafc; border-radius: 8px; }
+                .card h3 { margin: 0; font-size: 24px; color: #2d3748; }
+                .card p { margin: 5px 0 0; font-size: 11px; color: #718096; text-transform: uppercase; font-weight: bold; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                th { background: #667eea; color: white; padding: 12px; text-align: left; }
+                td { border-bottom: 1px solid #eee; padding: 10px; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <img src="${logoUrl}" class="logo" alt="Logo">
+                <div>
+                    <div class="title">MANGOSQUEEN SORTING REPORT</div>
+                    <div class="range-info">Range: ${currentRangeText}</div>
+                    <small>Generated: ${dateStr}</small>
+                </div>
+            </div>
+            <div class="summary">
+                <div class="card"><h3>${total}</h3><p>Total Scanned</p></div>
+                <div class="card"><h3>${acceptedCount}</h3><p>Accepted</p></div>
+                <div class="card"><h3>${rejectedCount}</h3><p>Rejected</p></div>
+                <div class="card"><h3>${rate}%</h3><p>Acceptance Rate</p></div>
+            </div>
+            <h3>Detailed List</h3>
+            <table>
+                <thead><tr><th>Time</th><th>Prediction</th><th>Confidence</th><th>Status</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </body>
+        </html>
+    `;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    iframe.contentWindow.document.write(printContent);
+    iframe.contentWindow.document.close();
+    iframe.contentWindow.focus();
+    setTimeout(() => { iframe.contentWindow.print(); document.body.removeChild(iframe); }, 500);
+  });
+
+  // 2. WORD EXPORT
+  document.getElementById('wordReportBtn').addEventListener('click', () => {
+    const data = analyticsHistory;
+    if(data.length === 0) { showWarning('No data to export. Try a different range.'); return; }
+
+    const { total, acceptedCount, rejectedCount, rate } = getReportStats(data);
+    const dateStr = new Date().toLocaleString();
+
+    let rows = '';
+    data.forEach(item => {
+        rows += `<tr>
+            <td style="border:1px solid #ddd;padding:8px;">${new Date(item.datetime).toLocaleString()}</td>
+            <td style="border:1px solid #ddd;padding:8px;">${item.prediction}</td>
+            <td style="border:1px solid #ddd;padding:8px;">${item.confidence.toFixed(1)}%</td>
+            <td style="border:1px solid #ddd;padding:8px;color:${item.accepted?'green':'red'}">${item.accepted?'Accepted':'Rejected'}</td>
+        </tr>`;
+    });
+
+    const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Sort Report</title></head>
+        <body>
+            <h2 style="color:#667eea; font-family:Arial;">MANGOSQUEEN SORTING REPORT</h2>
+            <p><strong>Range:</strong> ${currentRangeText}<br><strong>Generated:</strong> ${dateStr}</p>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-family:Arial;">
+                <tr>
+                    <td style="background:#f0f0f0;padding:15px;border:1px solid #ccc;text-align:center;"><strong>Total:</strong> ${total}</td>
+                    <td style="background:#f0f0f0;padding:15px;border:1px solid #ccc;text-align:center;"><strong>Accepted:</strong> ${acceptedCount}</td>
+                    <td style="background:#f0f0f0;padding:15px;border:1px solid #ccc;text-align:center;"><strong>Rejected:</strong> ${rejectedCount}</td>
+                    <td style="background:#f0f0f0;padding:15px;border:1px solid #ccc;text-align:center;"><strong>Rate:</strong> ${rate}%</td>
+                </tr>
+            </table>
+            <table style="width:100%;border-collapse:collapse;border:1px solid #ccc;font-family:Arial;">
+                <thead style="background:#667eea;color:white;">
+                    <tr><th style="padding:10px;text-align:left">Time</th><th style="padding:10px;text-align:left">Prediction</th><th style="padding:10px;text-align:left">Confidence</th><th style="padding:10px;text-align:left">Status</th></tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </body></html>
+    `;
+    
+    const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Sorting_Report.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  // 3. CSV EXPORT
+  document.getElementById('downloadReportBtn').addEventListener('click', () => {
+    const data = analyticsHistory;
+    if(data.length === 0) { showWarning('No data to export.'); return; }
+
+    let csv = "Date,Prediction,Confidence,Status,ImageID\n";
+    data.forEach(item => {
+        csv += `"${new Date(item.datetime).toLocaleString()}","${item.prediction}","${item.confidence}%","${item.accepted?'Accepted':'Rejected'}","${item.image||''}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "sorting_history.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  // --- UI EVENT LISTENERS ---
+
+  if (periodSelect) {
+    periodSelect.addEventListener('change', () => {
+        startDateInput.value = '';
+        endDateInput.value = '';
+        loadAnalytics(periodSelect.value);
+    });
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+        if (startDateInput.value && endDateInput.value) {
+            loadAnalytics('custom', startDateInput.value, endDateInput.value);
+        } else {
+            loadAnalytics(periodSelect.value);
+        }
+    });
+  }
+
+  if (applyDateBtn) {
+    applyDateBtn.addEventListener('click', () => {
+        const start = startDateInput.value;
+        const end = endDateInput.value;
+        
+        if (!start || !end) {
+            showWarning('Please select both Start and End dates.');
+            return;
+        }
+        loadAnalytics('custom', start, end);
+    });
+  }
+
+  if (resetDateBtn) {
+    resetDateBtn.addEventListener('click', () => {
+        startDateInput.value = '';
+        endDateInput.value = '';
+        periodSelect.value = 'day';
+        loadAnalytics('day');
+    });
+  }
+
+  // Initial Load
+  resizeCanvasToParent();
+  loadAnalytics(periodSelect.value);
+});
+</script>
 {% endblock %}
