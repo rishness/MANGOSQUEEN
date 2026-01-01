@@ -29,13 +29,22 @@ load_dotenv(os.path.join(basedir, '.env'))
 app = Flask(__name__)
 
 # ==========================================
+<<<<<<< HEAD
 #  GEMINI AI & CHATBOT CONFIGURATION (V2 UPGRADE)
+=======
+#  GEMINI AI & CHATBOT CONFIGURATION (FIXED)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 # ==========================================
 
 # 1. Load API Key
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 
+<<<<<<< HEAD
 # 2. Define System Instructions (The "Brain") - Uses V2 Permissive Logic
+=======
+# 2. Define System Instructions (The "Brain")
+# CRITICAL FIX: Rule 3 is now permissive for harmless general topics/jokes.
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 SYSTEM_INSTRUCTION_TEXT = """
 You are "Mangosteenify", the expert assistant for the MangosQueen application.
 
@@ -81,9 +90,13 @@ if GOOGLE_API_KEY:
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
         
+<<<<<<< HEAD
         # Configure Model with System Instructions
+=======
+        # Configure Model with System Instructions (This ensures rules are ALWAYS active)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         model = genai.GenerativeModel(
-            model_name="gemini-2.0-flash", 
+            model_name="gemini-2.0-flash",
             system_instruction=SYSTEM_INSTRUCTION_TEXT, 
             generation_config={
                 "temperature": 0.7,
@@ -107,11 +120,19 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'default-dev-key-if-env-fails
 
 # SESSION CONFIGURATION (V2 SECURE)
 app.config.update(
+<<<<<<< HEAD
     SESSION_COOKIE_SECURE=True,           
     SESSION_COOKIE_HTTPONLY=True,         
     SESSION_COOKIE_SAMESITE='Lax',        
     PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  
     SESSION_PERMANENT=False,              # Non-persistent sessions (Secure)
+=======
+    SESSION_COOKIE_SECURE=True,           # Only send over HTTPS
+    SESSION_COOKIE_HTTPONLY=True,         # Prevent JavaScript access
+    SESSION_COOKIE_SAMESITE='Lax',        # CSRF protection
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),  # Server-side session timeout
+    SESSION_PERMANENT=False,              # CRITICAL: Make sessions non-persistent
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 )
 
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -154,7 +175,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
+<<<<<<< HEAD
 # -------------------- SESSION SECURITY DECORATOR (V2) --------------------
+=======
+# -------------------- SESSION SECURITY DECORATOR --------------------
+# This is the "Gatekeeper" from the old version that fixes your issue.
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -164,6 +190,7 @@ def login_required(f):
             return redirect(url_for('login'))
         
         # 2. Prevent Caching (Fixes Back Button Issue)
+        # This tells the browser: "Do not save this page. Ask server every time."
         response = make_response(f(*args, **kwargs))
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
@@ -192,6 +219,7 @@ def login():
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        # CHANGED: Get raw input to allow for Username (which might have different casing) or Email
         login_input = request.form['email'].strip()
         password = request.form['password']
 
@@ -218,12 +246,21 @@ def login():
             if check_password_hash(user['password'], password):
                 session['logged_in'] = True
                 
+<<<<<<< HEAD
                 # Securely store email from DB
+=======
+                # CHANGED: Store the actual email from DB, not the input (which could be a username)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
                 session['email'] = user['email']
                 
                 session['user_id'] = user['id']
                 session['login_message_shown'] = False
+<<<<<<< HEAD
                 session.permanent = False  # V2 Fix: Ensure non-persistent
+=======
+                # CRITICAL FIX: Explicitly set session to non-persistent
+                session.permanent = False  # This ensures session expires on browser close
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
                 
                 users_ref.document(user['id']).update({
                     'datetime_login': datetime.now().isoformat()
@@ -257,7 +294,11 @@ def logout():
         except Exception as e:
             print(f"Error updating logout time: {e}")
     
+<<<<<<< HEAD
     session.clear() # V2 Fix: Completely clear session
+=======
+    session.clear() # Completely clear the session
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
     
     flash("Logged Out Successfully", "info")
     return redirect(url_for('home'))
@@ -289,9 +330,18 @@ def add_cors_headers(f):
             response.headers.extend(response_headers)
             return response
         
+<<<<<<< HEAD
         response = f(*args, **kwargs)
         
         if isinstance(response, tuple):
+=======
+        # Call the actual route function
+        response = f(*args, **kwargs)
+        
+        # Add headers to the response
+        if isinstance(response, tuple):
+            # Response is a tuple (data, status, headers)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
             if len(response) == 3:
                 data, status, headers = response
                 if headers is None:
@@ -304,6 +354,10 @@ def add_cors_headers(f):
             else:
                 return response[0], 200, response_headers
         else:
+<<<<<<< HEAD
+=======
+            # Response is just data
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
             return response, 200, response_headers
     
     return decorated_function
@@ -332,11 +386,17 @@ def google_login():
             return jsonify({'success': False, 'message': 'No ID token provided'}), 400
 
         try:
+<<<<<<< HEAD
             # V2 Fix: Added clock_skew_seconds for reliability
+=======
+            # Verify the token with enhanced error handling
+            # CRITICAL FIX: Added clock_skew_seconds=10 to handle server time differences
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
             decoded_token = auth.verify_id_token(id_token, clock_skew_seconds=10)
             uid = decoded_token['uid']
             print(f"✅ Token verified for UID: {uid}, Email: {decoded_token.get('email')}")
             
+            # Additional verification: check if token email matches provided email
             token_email = decoded_token.get('email')
             if token_email and email and token_email.lower() != email.lower():
                 print(f"❌ Email mismatch: token={token_email}, provided={email}")
@@ -388,6 +448,10 @@ def google_login():
                 username = username_base
                 counter = 1
                 
+<<<<<<< HEAD
+=======
+                # Ensure unique username
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
                 while True:
                     username_query = users_ref.where('username', '==', username).limit(1).get()
                     if len(username_query) == 0:
@@ -423,8 +487,15 @@ def google_login():
             print("❌ No user ID obtained from database operations")
             return jsonify({'success': False, 'message': 'User creation failed'}), 500
 
+<<<<<<< HEAD
         try:
             session.clear() # V2 Fix: Clean state
+=======
+        # Session management
+        try:
+            # FIX: Clear session before setting new one to avoid conflicts
+            session.clear()
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
             
             session['logged_in'] = True
             session['username'] = email.split('@')[0]
@@ -433,7 +504,12 @@ def google_login():
             session['login_message_shown'] = False
             session['auth_method'] = 'google'
             
+<<<<<<< HEAD
             session.permanent = False  # V2 Fix: Non-persistent
+=======
+            # CRITICAL FIX: Explicitly set session to non-persistent
+            session.permanent = False  # This ensures session expires on browser close
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
             
             print(f"✅ Session created for user: {user_id}")
             
@@ -893,7 +969,12 @@ def preprocess_image_for_model(img):
     # Expand dimensions (1, 224, 224, 3)
     img_array = np.expand_dims(img_array, axis=0)
     
+<<<<<<< HEAD
     # Scale to [-1, 1] instead of [0, 1]
+=======
+    # CRITICAL FIX: Scale to [-1, 1] instead of [0, 1]
+    # (x / 127.5) - 1.0  matches MobileNetV2 preprocess_input
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
     img_array = (img_array / 127.5) - 1.0
     
     return img_array
@@ -912,7 +993,11 @@ def predict_disease(image_path):
         # Load image with PIL
         img = Image.open(image_path)
         
+<<<<<<< HEAD
         # Preprocess
+=======
+        # Preprocess (Correct Logic)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         img_array = preprocess_image_for_model(img)
         
         # TFLite Inference
@@ -962,7 +1047,11 @@ def predict_disease_from_base64(image_data):
         image_bytes = base64.b64decode(base64_data)
         img = Image.open(io.BytesIO(image_bytes))
         
+<<<<<<< HEAD
         # Preprocess
+=======
+        # Preprocess (Correct Logic)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         img_array = preprocess_image_for_model(img)
         
         # TFLite Inference
@@ -1527,7 +1616,11 @@ def delete_scan(scan_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+<<<<<<< HEAD
 # -------------------- ROBUST CHATBOT ROUTE (V2 FIXED) --------------------
+=======
+# -------------------- ROBUST CHATBOT ROUTE (UPDATED) --------------------
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 @app.route('/api/chat', methods=['POST'])
 @login_required # PROTECTED
 def chat():
@@ -1566,16 +1659,26 @@ def chat():
         # 6. Update History
         chat_history.append({'role': 'user', 'parts': [user_message]})
         chat_history.append({'role': 'model', 'parts': [bot_reply]})
+<<<<<<< HEAD
         session['chat_history'] = chat_history[-20:] # Keep last 20 turns
+=======
+        
+        # Limit history to last 10 turns to save Token Quota
+        session['chat_history'] = chat_history[-10:] # Reduced to 10 to prevent Token Limit errors
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         session.modified = True
 
         return jsonify({'reply': bot_reply})
 
     except Exception as e:
-        print(f"❌ CRITICAL ERROR in /api/chat: {e}")
-        import traceback
-        traceback.print_exc() 
-        return jsonify({'reply': f"Error: {str(e)}"}), 500
+        error_msg = str(e)
+        print(f"❌ CHAT ERROR: {error_msg}")
+        
+        # Check for Quota Error (429)
+        if "429" in error_msg or "quota" in error_msg.lower():
+            return jsonify({'reply': "I'm thinking too hard! My brain is overloaded (Quota Exceeded). Please wait 1 minute and try again."})
+            
+        return jsonify({'reply': "I encountered a system error. Please try again."}), 500
     
 # Raspi connection config (override via .env if needed)
 RASPI_HOST = os.getenv('RASPI_HOST', '10.183.102.246')  # your Pi IP
@@ -1641,19 +1744,27 @@ def api_servo():
         print(f"Servo proxy error: {e}")
         return jsonify({'error': str(e)}), 500
 
+<<<<<<< HEAD
 
 # ==========================================
 #  ANALYTICS ROUTE (VERSION 1 LOGIC RESTORED)
 #  This restores the ability to use Custom Date Ranges
 # ==========================================
 
+=======
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 @app.route('/api/sort-analytics')
 @login_required
 def sort_analytics():
     """
+<<<<<<< HEAD
     Aggregates data from collection 'sorts'.
     Supports Custom Date Ranges (startDate, endDate) OR standard periods (day/week/month).
     Populates 'history' with all records in the range for reporting.
+=======
+    Aggregates data from collection 'sorts' (per-day documents with subcollection 'records').
+    Supports period=day/week/month as before. Returns labels + accepted/rejected arrays and raw history.
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
     """
     try:
         # Get parameters
@@ -1662,8 +1773,41 @@ def sort_analytics():
         end_date_str = request.args.get('endDate')
         
         now = datetime.now()
+
         labels = []
         buckets = {}
+<<<<<<< HEAD
+=======
+
+        if period == 'week':
+            weeks = 12
+            # prepare ISO-week labels
+            for i in range(weeks-1, -1, -1):
+                d = now - timedelta(weeks=i)
+                y, w, _ = d.isocalendar()
+                label = f"{y}-W{w:02d}"
+                labels.append(label)
+                buckets[label] = {'accepted': 0, 'rejected': 0, 'total': 0}
+        elif period == 'month':
+            months = 12
+            for i in range(months-1, -1, -1):
+                month_date = (now.replace(day=1) - timedelta(days=30*i))
+                year = month_date.year
+                month = month_date.month
+                label = f"{year}-{month:02d}"
+                labels.append(label)
+                buckets[label] = {'accepted': 0, 'rejected': 0, 'total': 0}
+        else:
+            days = 30
+            for i in range(days-1, -1, -1):
+                d = now - timedelta(days=i)
+                label = d.strftime('%Y-%m-%d')
+                labels.append(label)
+                buckets[label] = {'accepted': 0, 'rejected': 0, 'total': 0}
+
+        # Fetch day documents for this user
+        sorts_q = db.collection('sorts').where('user_id', '==', session['user_id']).get()
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         history = []
 
         # --- DATE LOGIC ---
@@ -1719,8 +1863,10 @@ def sort_analytics():
         for day_doc in sorts_docs:
             day = day_doc.to_dict()
             date_key = day.get('date')
-            if not date_key: continue
+            if not date_key:
+                continue
 
+<<<<<<< HEAD
             # Determine label mapping for the chart
             label = date_key # Default for 'day' or custom range
             
@@ -1734,6 +1880,30 @@ def sort_analytics():
                         label = dt_obj.strftime('%Y-%m')
                 except:
                     pass
+=======
+            # determine which label this day maps to depending on period
+            try:
+                dt_obj = datetime.fromisoformat(date_key + 'T00:00:00')
+            except Exception:
+                # fallback parse
+                try:
+                    dt_obj = datetime.strptime(date_key, '%Y-%m-%d')
+                except Exception:
+                    continue
+
+            if period == 'week':
+                y, w, _ = dt_obj.isocalendar()
+                label = f"{y}-W{w:02d}"
+            elif period == 'month':
+                label = dt_obj.strftime('%Y-%m')
+            else:
+                label = dt_obj.strftime('%Y-%m-%d')
+
+            # Read stored aggregated counters if present
+            accepted_count = int(day.get('accepted') or 0)
+            rejected_count = int(day.get('rejected') or 0)
+            total_count = int(day.get('total') or (accepted_count + rejected_count))
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
 
             # Update Chart Buckets
             if label in buckets:
@@ -1741,6 +1911,7 @@ def sort_analytics():
                 buckets[label]['rejected'] += int(day.get('rejected') or 0)
                 buckets[label]['total'] += int(day.get('total') or 0)
 
+<<<<<<< HEAD
             # --- FETCH HISTORY RECORDS ---
             try:
                 # Fetch subcollection 'records' for this day
@@ -1748,12 +1919,22 @@ def sort_analytics():
                 for r in recs:
                     rdata = r.to_dict()
                     history.append({
+=======
+            # Optionally include recent records from subcollection (limit 50)
+            try:
+                recs = day_doc.reference.collection('records').where('user_id', '==', session['user_id']).order_by('datetime_scanned', direction=firestore.Query.DESCENDING).limit(50).get()
+                for r in recs:
+                    rdata = r.to_dict()
+                    history.append({
+                        'id': r.id,
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
                         'datetime': rdata.get('datetime_scanned'),
                         'prediction': rdata.get('prediction'),
                         'confidence': float(rdata.get('confidence') or 0),
                         'accepted': any(k in str(rdata.get('prediction','')).lower() for k in ['half','healthy','ripe','over']),
                         'image': rdata.get('image')
                     })
+<<<<<<< HEAD
             except Exception as e:
                 print(f"Error fetching subcollection for {date_key}: {e}")
 
@@ -1769,6 +1950,21 @@ def sort_analytics():
             'accepted': accepted_data,
             'rejected': rejected_data,
             'history': history 
+=======
+            except Exception:
+                pass
+
+        accepted = [buckets[l]['accepted'] for l in labels]
+        rejected = [buckets[l]['rejected'] for l in labels]
+        total = [buckets[l]['total'] for l in labels]
+
+        return jsonify({
+            'labels': labels,
+            'accepted': accepted,
+            'rejected': rejected,
+            'total': total,
+            'history': sorted(history, key=lambda x: x['datetime'] or '', reverse=True)
+>>>>>>> 7f22953c827948d4aaba191f3de02bc2fbb40016
         })
 
     except Exception as e:
